@@ -4,7 +4,7 @@ export interface Area {
   region: string;
   lat: number;
   lng: number;
-  address?: string; // set when this is a geocoded address (not a planning area)
+  address?: string;
 }
 
 export interface TimeBlock {
@@ -37,6 +37,14 @@ export interface FlexarStation {
   lng: number;
 }
 
+export interface GetGoPod {
+  id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+}
+
 export interface FlexarOpts {
   walkSpeedKmh?: number;
   maxWalkKm?: number;
@@ -47,10 +55,10 @@ export interface FlexarResult {
   pickupStation: FlexarStation;
   dropoffStation: FlexarStation;
   walkInMin: number;
+  walkInKm: number;
   walkOutMin: number;
+  walkOutKm: number;
   driveMin: number;
-  originStationCount: number;
-  destStationCount: number;
   originTown: string;
   destTown: string;
 }
@@ -60,6 +68,9 @@ export interface GetGoResult {
   oneWayMin: number;
   stopoverMin: number;
   stopoverHours: number;
+  nearestPod?: GetGoPod;
+  walkToPickupKm?: number;
+  walkToPickupMin?: number;
 }
 
 export interface QuoteResult {
@@ -85,4 +96,6 @@ export interface QuoteResult {
 export interface QuoteOpts {
   flexar?: FlexarOpts;
   getgoStopoverHours?: number;
+  flexarStations?: FlexarStation[];
+  getgoPods?: GetGoPod[];
 }

@@ -76,26 +76,22 @@ export default function ResultRow({ q, origin = null, dest = null, onGetgoStopov
               <div className="cpc-flexar-step">
                 <span className="cpc-flexar-dot" />
                 <div>
-                  <div className="cpc-flexar-line">Take a car from <strong>nearest Flexar station</strong></div>
-                  <div className="cpc-flexar-sub">
-                    {q.flexar.originStationCount} station{q.flexar.originStationCount > 1 ? "s" : ""} in {q.flexar.originTown} · ~{q.flexar.walkInMin} min walk
-                  </div>
+                  <div className="cpc-flexar-line">Walk to <strong>{q.flexar.pickupStation.name}</strong></div>
+                  <div className="cpc-flexar-sub">~{q.flexar.walkInMin} min · {q.flexar.walkInKm} m from your location</div>
                 </div>
               </div>
               <div className="cpc-flexar-step">
                 <span className="cpc-flexar-dot cpc-flexar-dot-drive" />
                 <div>
-                  <div className="cpc-flexar-line">Drive to <strong>any Flexar station in {q.flexar.destTown}</strong></div>
-                  <div className="cpc-flexar-sub">
-                    {q.flexar.destStationCount} station{q.flexar.destStationCount > 1 ? "s" : ""} available · {q.km} km · {q.flexar.driveMin} min drive
-                  </div>
+                  <div className="cpc-flexar-line">Drive to <strong>{q.flexar.dropoffStation.name}</strong></div>
+                  <div className="cpc-flexar-sub">{q.km} km · {q.flexar.driveMin} min drive</div>
                 </div>
               </div>
               <div className="cpc-flexar-step">
                 <span className="cpc-flexar-dot cpc-flexar-dot-end" />
                 <div>
                   <div className="cpc-flexar-line">Walk to destination</div>
-                  <div className="cpc-flexar-sub">~{q.flexar.walkOutMin} min walk from drop-off station</div>
+                  <div className="cpc-flexar-sub">~{q.flexar.walkOutMin} min · {q.flexar.walkOutKm} m from {q.flexar.dropoffStation.name}</div>
                 </div>
               </div>
             </div>
@@ -123,6 +119,18 @@ export default function ResultRow({ q, origin = null, dest = null, onGetgoStopov
                   </div>
                 )}
               </div>
+              {q.getgo.nearestPod && (
+                <div className="cpc-flexar-step">
+                  <span className="cpc-getgo-dot" />
+                  <div>
+                    <div className="cpc-flexar-line">Nearest pod: <strong>{q.getgo.nearestPod.name}</strong></div>
+                    <div className="cpc-flexar-sub">
+                      {q.getgo.walkToPickupMin !== undefined ? `~${q.getgo.walkToPickupMin} min walk` : ""}
+                      {q.getgo.walkToPickupKm !== undefined ? ` · ${q.getgo.walkToPickupKm} m away` : ""}
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="cpc-flexar-step">
                 <span className="cpc-getgo-dot" />
                 <div>

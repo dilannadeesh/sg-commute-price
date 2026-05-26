@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { FLEXAR_STATIONS, FLEXAR_STATIONS_PER_TOWN, FLEXAR_WALK_MIN, SG_AREAS } from "@/lib/quote";
+import { FLEXAR_STATIONS, SG_AREAS } from "@/lib/quote";
 
 export const revalidate = 3600; // 1 hour cache
 
@@ -18,8 +18,7 @@ export async function GET() {
       id: townId,
       name: area?.name ?? townId,
       region: area?.region ?? "",
-      stationCount: FLEXAR_STATIONS_PER_TOWN[townId] ?? stations.length,
-      walkMinToNearest: FLEXAR_WALK_MIN[townId] ?? 7,
+      stationCount: stations.length,
       stations,
     };
   });
