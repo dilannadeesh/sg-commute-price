@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { SG_AREAS, TIME_BLOCKS, FLEXAR_REGIONS_DEFAULT, quoteAll } from "@/lib/quote";
+import { SG_AREAS, TIME_BLOCKS, FLEXAR_REGIONS_DEFAULT, quoteAll, findNearestArea, haversineKm } from "@/lib/quote";
 import type { Area, TimeBlock } from "@/lib/types";
 import AreaPicker from "@/components/AreaPicker";
 import TimePicker from "@/components/TimePicker";
@@ -11,11 +11,6 @@ import Icon from "@/components/Icon";
 const DEFAULT_ORIGIN_ID = "tiong-bahru";
 const DEFAULT_DEST_ID   = "tampines";
 const DEFAULT_TIME_ID   = "08-10";
-
-function distKm(a: Area, b: Area) {
-  const dx = a.x - b.x, dy = a.y - b.y;
-  return Math.round(Math.sqrt(dx * dx + dy * dy) * 10) / 10;
-}
 
 export default function Page() {
   const [origin, setOrigin] = useState<Area | null>(
@@ -29,12 +24,13 @@ export default function Page() {
   );
   const [stopover, setStopover] = useState(1);
 
-  // Sync from URL params on mount
+  // Read URL params on mount, then request geolocation for From
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const fromId = params.get("from");
     const toId   = params.get("to");
     const tId    = params.get("t");
+
     if (fromId) {
       const a = SG_AREAS.find(x => x.id === fromId);
       if (a) setOrigin(a);
@@ -47,16 +43,38 @@ export default function Page() {
       const t = TIME_BLOCKS.find(x => x.id === tId);
       if (t) setTime(t);
     }
-  }, []);
+
+    // Only use geolocation as From if no ?from= param is present
+    if (!fromId && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const { latitude: lat, longitude: lng } = pos.coords;
+          const nearest = findNearestArea(lat, lng);
+
+          // Build a display name: "Near [Area]" or use the actual coords
+          // as a searched-address entry so the distance calc is accurate
+          const currentLoc: Area = {
+            id:      nearest.id,
+            name:    `Near ${nearest.name}`,
+            region:  nearest.region,
+            lat,
+            lng,
+            address: `Current location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+          };
+          setOrigin(currentLoc);
+        },
+        () => { /* user denied — keep default */ }
+      );
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync state to URL
   useEffect(() => {
     const params = new URLSearchParams();
-    if (origin) params.set("from", origin.id);
-    if (dest)   params.set("to",   dest.id);
+    if (origin && !origin.address) params.set("from", origin.id);
+    if (dest   && !dest.address)   params.set("to",   dest.id);
     params.set("t", time.id);
-    const newUrl = `${window.location.pathname}?${params.toString()}`;
-    window.history.replaceState(null, "", newUrl);
+    window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
   }, [origin, dest, time]);
 
   const flexarOpts = useMemo(
@@ -69,7 +87,9 @@ export default function Page() {
     [origin, dest, time, flexarOpts, stopover]
   );
 
-  const km = origin && dest ? distKm(origin, dest) : 0;
+  const km = origin && dest
+    ? Math.round(haversineKm(origin.lat, origin.lng, dest.lat, dest.lng) * 1.22 * 10) / 10
+    : 0;
   const bestAvail  = results.find(r => !r.unavailable);
   const worstAvail = [...results].filter(r => !r.unavailable).pop();
   const available  = results.filter(r => !r.unavailable);
@@ -102,15 +122,14 @@ export default function Page() {
           </h1>
           <p className="cpc-hero-sub">
             Compare Grab, TADA, Gojek, Flexar, GetGo and public transport across Singapore — in real
-            Singapore dollars, with peak-hour surge, Flexar station walks, and GetGo round-trip +
-            stopover baked in.
+            Singapore dollars, with peak-hour surge, Flexar station walks, and GetGo round-trip + stopover baked in.
           </p>
         </header>
 
         <div className="cpc-search-bar">
           <AreaPicker
             label="From"
-            placeholder="Pick origin"
+            placeholder="Pick origin or search address"
             value={origin}
             onChange={setOrigin}
             anchor="left"
@@ -120,7 +139,7 @@ export default function Page() {
           </button>
           <AreaPicker
             label="To"
-            placeholder="Pick destination"
+            placeholder="Pick destination or search address"
             value={dest}
             onChange={setDest}
             anchor="left"
@@ -137,7 +156,9 @@ export default function Page() {
                   <div className="cpc-trip-route-row">
                     <span className="cpc-trip-pin" style={{ background: "var(--color-ink)" }}>A</span>
                     <div>
-                      <div className="cpc-trip-area-name">{origin.name}</div>
+                      <div className="cpc-trip-area-name" style={{ wordBreak: "break-word" }}>
+                        {origin.address ? origin.name : origin.name}
+                      </div>
                       <div className="cpc-trip-area-region">{origin.region}</div>
                     </div>
                   </div>
@@ -145,17 +166,17 @@ export default function Page() {
                   <div className="cpc-trip-route-row">
                     <span className="cpc-trip-pin" style={{ background: "var(--color-primary)" }}>B</span>
                     <div>
-                      <div className="cpc-trip-area-name">{dest.name}</div>
+                      <div className="cpc-trip-area-name" style={{ wordBreak: "break-word" }}>
+                        {dest.name}
+                      </div>
                       <div className="cpc-trip-area-region">{dest.region}</div>
                     </div>
                   </div>
                 </div>
                 <div className="cpc-trip-stats">
                   <div>
-                    <div className="cpc-trip-stat">
-                      {km}<span>km</span>
-                    </div>
-                    <div className="cpc-trip-lbl">Door to door</div>
+                    <div className="cpc-trip-stat">{km}<span>km</span></div>
+                    <div className="cpc-trip-lbl">By road</div>
                   </div>
                   <div>
                     <div className="cpc-trip-stat">{time.short}</div>
@@ -184,7 +205,9 @@ export default function Page() {
             <main>
               <div className="cpc-results-head">
                 <h2 className="t-display-md" style={{ margin: 0 }}>
-                  {available.length} way{available.length !== 1 ? "s" : ""} to get from {origin.name} to {dest.name}
+                  {available.length} way{available.length !== 1 ? "s" : ""} to get from{" "}
+                  {origin.address ? "your location" : origin.name} to{" "}
+                  {dest.address ? "destination" : dest.name}
                 </h2>
                 <div className="t-body-sm t-muted">Sorted by best value · price + time</div>
               </div>
@@ -206,7 +229,9 @@ export default function Page() {
           </div>
         ) : (
           <div className="cpc-empty">
-            Pick a different origin and destination to compare.
+            {origin && dest && origin.id === dest.id
+              ? "Origin and destination are the same area — try a different combination."
+              : "Pick a different origin and destination to compare."}
           </div>
         )}
       </div>

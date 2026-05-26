@@ -11,8 +11,8 @@ export async function GET() {
     const stations = FLEXAR_STATIONS.filter(s => s.area === townId).map(s => ({
       id: s.id,
       name: s.name,
-      lat: s.y,
-      lng: s.x,
+      lat: s.lat,
+      lng: s.lng,
     }));
     return {
       id: townId,

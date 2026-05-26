@@ -2,8 +2,9 @@ export interface Area {
   id: string;
   name: string;
   region: string;
-  x: number;
-  y: number;
+  lat: number;
+  lng: number;
+  address?: string; // set when this is a geocoded address (not a planning area)
 }
 
 export interface TimeBlock {
@@ -32,8 +33,8 @@ export interface FlexarStation {
   id: string;
   name: string;
   area: string;
-  x: number;
-  y: number;
+  lat: number;
+  lng: number;
 }
 
 export interface FlexarOpts {
