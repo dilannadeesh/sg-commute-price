@@ -44,8 +44,8 @@ export default function Page() {
       if (t) setTime(t);
     }
 
-    // Only use geolocation as From if no ?from= param is present
-    if (!fromId && navigator.geolocation) {
+    // Always request geolocation on load — overrides URL param if granted
+    if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         pos => {
           const { latitude: lat, longitude: lng } = pos.coords;
@@ -108,10 +108,7 @@ export default function Page() {
         </div>
         <div className="cpc-nav-tabs">
           <button className="cpc-nav-tab is-active">Commute</button>
-          <button className="cpc-nav-tab">Rentals</button>
-          <button className="cpc-nav-tab">Experiences</button>
         </div>
-        <button className="cpc-nav-cta">Get started</button>
       </nav>
 
       <div className="cpc-var-a">
