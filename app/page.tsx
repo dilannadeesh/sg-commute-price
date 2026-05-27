@@ -7,6 +7,7 @@ import AreaPicker from "@/components/AreaPicker";
 import TimePicker from "@/components/TimePicker";
 import ResultRow from "@/components/ResultRow";
 import Icon from "@/components/Icon";
+import NavBar from "@/components/NavBar";
 
 const DEFAULT_DEST_ID  = "tampines";
 const DEFAULT_TIME_ID  = "08-10";
@@ -99,14 +100,7 @@ export default function Page() {
 
   return (
     <div className="cpc-app">
-      <nav className="cpc-nav">
-        <div style={{ font: "700 18px var(--font-sans)", color: "var(--color-ink)", letterSpacing: "-0.3px" }}>
-          SGliving
-        </div>
-        <div className="cpc-nav-tabs">
-          <button className="cpc-nav-tab is-active">Commute</button>
-        </div>
-      </nav>
+      <NavBar />
 
       <div className="cpc-var-a">
         <header className="cpc-hero">

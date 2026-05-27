@@ -99,3 +99,14 @@ export interface QuoteOpts {
   flexarStations?: FlexarStation[];
   getgoPods?: GetGoPod[];
 }
+
+export interface Deal {
+  id: number;
+  text: string;
+  excerpt: string;
+  date: string;
+  tags: string[];
+  url: string;
+  imageFileId?: string;
+  imageUrl?: string;
+}
