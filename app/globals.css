@@ -692,3 +692,36 @@ body {
   font: var(--type-caption); color: var(--color-muted);
   flex-shrink: 0; align-self: center;
 }
+
+/* Tourist-attraction image overlay */
+.deal-card-img-cover {
+  position: relative;
+  width: 100%; height: 200px; overflow: hidden;
+}
+.deal-card-img-cover img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.deal-card-img-overlay {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.80) 0%, transparent 100%);
+  padding: 32px 16px 14px;
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 8px;
+}
+.airline-route-overlay {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+}
+.airline-origin-img {
+  font: 400 11px/1 var(--font-sans); color: rgba(255,255,255,0.80);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.airline-dest-img {
+  font: 700 18px/1.2 var(--font-sans); color: #fff;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.airline-price-badge-img {
+  background: #fff; color: #1F6FEB;
+  font: 700 14px/1 var(--font-sans);
+  padding: 5px 12px; border-radius: var(--radius-full);
+  white-space: nowrap; flex-shrink: 0;
+}

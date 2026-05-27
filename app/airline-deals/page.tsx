@@ -86,7 +86,7 @@ export default function AirlineDealsPage() {
           </h1>
           <p className="cpc-hero-sub" style={{ maxWidth: 540, margin: "8px auto 0" }}>
             Flash sales, promo fares and cheap flights from Changi Airport —
-            Scoot, AirAsia, Jetstar, SIA and more. Updated every night, removed after 30 days.
+            Scoot, AirAsia, Jetstar, SIA and more.
           </p>
 
           {/* Search */}

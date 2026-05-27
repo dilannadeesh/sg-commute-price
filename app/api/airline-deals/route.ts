@@ -97,6 +97,29 @@ function isSingaporeDeal(text: string): boolean {
   );
 }
 
+// ── Wikipedia tourist-attraction image ────────────────────────────────────────
+
+async function getDestinationImage(destination: string): Promise<string | undefined> {
+  const term = destination === "KL" ? "Kuala Lumpur" : destination;
+  try {
+    const res = await fetch(
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(term)}`,
+      {
+        headers: { "User-Agent": "SGliving/1.0 (https://sgliving.life; contact@sgliving.life)" },
+        signal: AbortSignal.timeout(3000),
+        next: { revalidate: 604800 }, // cache 7 days
+      }
+    );
+    if (!res.ok) return undefined;
+    const data = await res.json();
+    const src = data.thumbnail?.source as string | undefined;
+    if (!src) return undefined;
+    return src.replace(/\/\d+px-/, "/800px-");
+  } catch {
+    return undefined;
+  }
+}
+
 // ── Scrape t.me/s/{channel} ───────────────────────────────────────────────────
 
 async function fetchFromPublicChannel(): Promise<AirlineDeal[]> {
@@ -224,19 +247,46 @@ const MOCK_DEALS: AirlineDeal[] = [
   },
 ];
 
+// ── Enrich deals with Wikipedia images ───────────────────────────────────────
+
+async function enrichWithImages(deals: AirlineDeal[]): Promise<AirlineDeal[]> {
+  const uniqueDests = [...new Set(deals.map(d => d.destination).filter(Boolean))] as string[];
+  const imageMap = new Map<string, string>();
+
+  await Promise.all(
+    uniqueDests.map(async dest => {
+      const img = await getDestinationImage(dest);
+      if (img) imageMap.set(dest.toLowerCase(), img);
+    })
+  );
+
+  return deals.map(deal => ({
+    ...deal,
+    imageUrl: deal.destination
+      ? (imageMap.get(deal.destination.toLowerCase()) ?? deal.imageUrl)
+      : deal.imageUrl,
+  }));
+}
+
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export const revalidate = 86400;
 
 export async function GET() {
   try {
-    const deals = await fetchFromPublicChannel();
-    if (deals.length > 0) {
-      return NextResponse.json({ deals, updatedAt: new Date().toISOString(), source: "telegram" });
+    let deals = await fetchFromPublicChannel();
+    let source = "telegram";
+
+    if (deals.length === 0) {
+      deals = [...MOCK_DEALS];
+      source = "mock";
     }
-    return NextResponse.json({ deals: MOCK_DEALS, updatedAt: new Date().toISOString(), source: "mock" });
+
+    const enriched = await enrichWithImages(deals);
+    return NextResponse.json({ deals: enriched, updatedAt: new Date().toISOString(), source });
   } catch (err) {
     console.error("[/api/airline-deals] error:", err);
-    return NextResponse.json({ deals: MOCK_DEALS, updatedAt: new Date().toISOString(), source: "mock" });
+    const enriched = await enrichWithImages([...MOCK_DEALS]).catch(() => MOCK_DEALS);
+    return NextResponse.json({ deals: enriched, updatedAt: new Date().toISOString(), source: "mock" });
   }
 }

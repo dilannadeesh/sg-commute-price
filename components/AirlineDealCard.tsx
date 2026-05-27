@@ -86,9 +86,20 @@ export default function AirlineDealCard({ deal }: Props) {
       aria-label={deal.excerpt}
     >
       {deal.imageUrl ? (
-        <div className="deal-card-img">
+        <div className="deal-card-img-cover">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={deal.imageUrl} alt="Airline deal" loading="lazy" />
+          <img
+            src={deal.imageUrl}
+            alt={deal.destination ? `${deal.destination} attraction` : "Destination"}
+            loading="lazy"
+          />
+          <div className="deal-card-img-overlay">
+            <div className="airline-route-overlay">
+              <span className="airline-origin-img">Singapore</span>
+              <span className="airline-dest-img">{deal.destination ?? "Destination"}</span>
+            </div>
+            {deal.price && <span className="airline-price-badge-img">{deal.price}</span>}
+          </div>
         </div>
       ) : (
         <div className="deal-card-img-placeholder" style={{ background: gradient }}>
@@ -97,17 +108,16 @@ export default function AirlineDealCard({ deal }: Props) {
       )}
 
       <div className="deal-card-body">
-        {/* Route header */}
-        <div className="airline-route-row">
-          <span className="airline-origin">Singapore</span>
-          <span className="airline-arrow">✈</span>
-          <span className="airline-dest">{deal.destination ?? "Destination"}</span>
-          {deal.price && <span className="airline-price-badge">{deal.price}</span>}
-        </div>
-
-        {deal.airline && (
-          <div className="airline-name">{deal.airline}</div>
+        {!deal.imageUrl && (
+          <div className="airline-route-row">
+            <span className="airline-origin">Singapore</span>
+            <span className="airline-arrow">✈</span>
+            <span className="airline-dest">{deal.destination ?? "Destination"}</span>
+            {deal.price && <span className="airline-price-badge">{deal.price}</span>}
+          </div>
         )}
+
+        {deal.airline && <div className="airline-name">{deal.airline}</div>}
 
         <p className="deal-card-text">{deal.excerpt}</p>
 
