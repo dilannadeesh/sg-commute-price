@@ -57,12 +57,13 @@ export default function FoodDealsPage() {
 
       <div className="deals-page">
         <header className="deals-hero">
-          <div className="cpc-hero-eyebrow">Updated daily from Telegram</div>
+          <div className="cpc-hero-eyebrow">Updated daily · sourced from @sgfooddeals</div>
           <h1 className="cpc-hero-title" style={{ fontSize: 32 }}>
-            Singapore Food Deals
+            Singapore Food Deals Today
           </h1>
-          <p className="cpc-hero-sub" style={{ maxWidth: 520, margin: "8px auto 0" }}>
-            The freshest food promos, 1-for-1s, and discount codes — all in one place.
+          <p className="cpc-hero-sub" style={{ maxWidth: 540, margin: "8px auto 0" }}>
+            The freshest Singapore restaurant promos, 1-for-1 offers and promo codes —
+            only posts tagged <strong>#deals</strong> with a direct link, refreshed every night.
           </p>
 
           {/* Search */}

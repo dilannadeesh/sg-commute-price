@@ -104,13 +104,13 @@ export default function Page() {
 
       <div className="cpc-var-a">
         <header className="cpc-hero">
-          <div className="cpc-hero-eyebrow">Convenience over pricing</div>
+          <div className="cpc-hero-eyebrow">Singapore journey planner · free &amp; instant</div>
           <h1 className="cpc-hero-title">
-            How much will your<br />commute really cost?
+            Compare Singapore<br />commute prices
           </h1>
           <p className="cpc-hero-sub">
-            Compare Grab, TADA, Gojek, Flexar, GetGo and public transport across Singapore — in real
-            Singapore dollars, with peak-hour surge, Flexar station walks, and GetGo round-trip + stopover baked in.
+            Grab, TADA, Gojek, Flexar car sharing, GetGo car rental and MRT/bus — all in one place.
+            Real Singapore dollars, peak-hour surge, Flexar station walk times and GetGo round-trip cost included.
           </p>
         </header>
 

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import type { Deal } from "@/lib/types";
 
-const CHANNEL = "sgfooddeals";
+const CHANNEL      = "sgfooddeals";
+const MAX_AGE_MS   = 5 * 24 * 60 * 60 * 1000; // 5 days
 
 // ── HTML helpers ──────────────────────────────────────────────────────────────
 
@@ -91,6 +92,10 @@ async function fetchFromPublicChannel(): Promise<Deal[]> {
     // Photo (background-image from the photo wrapper)
     const photoMatch = chunk.match(/background-image:url\('([^']+)'\)/);
     const imageUrl = photoMatch?.[1];
+
+    // ── Hard filter 3: must be within the last 5 days ───────────────────────
+    const ageMs = Date.now() - new Date(date).getTime();
+    if (ageMs > MAX_AGE_MS) continue;
 
     deals.push({
       id: messageId,
