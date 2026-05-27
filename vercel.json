@@ -3,6 +3,10 @@
     {
       "path": "/api/deals/refresh",
       "schedule": "59 15 * * *"
+    },
+    {
+      "path": "/api/airline-deals/refresh",
+      "schedule": "59 15 * * *"
     }
   ]
 }

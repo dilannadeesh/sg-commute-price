@@ -15,18 +15,9 @@ export default function NavBar() {
         SGliving
       </Link>
       <div className="cpc-nav-tabs">
-        <Link
-          href="/"
-          className={"cpc-nav-tab" + (pathname === "/" ? " is-active" : "")}
-        >
-          Commute
-        </Link>
-        <Link
-          href="/food-deals"
-          className={"cpc-nav-tab" + (pathname.startsWith("/food-deals") ? " is-active" : "")}
-        >
-          Food Deals
-        </Link>
+        <Link href="/"             className={"cpc-nav-tab" + (pathname === "/"                      ? " is-active" : "")}>Commute</Link>
+        <Link href="/food-deals"   className={"cpc-nav-tab" + (pathname.startsWith("/food-deals")    ? " is-active" : "")}>Food Deals</Link>
+        <Link href="/airline-deals" className={"cpc-nav-tab" + (pathname.startsWith("/airline-deals") ? " is-active" : "")}>Airline Deals</Link>
       </div>
     </nav>
   );

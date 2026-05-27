@@ -110,3 +110,16 @@ export interface Deal {
   moreInfoUrl: string;
   imageUrl?: string;
 }
+
+export interface AirlineDeal {
+  id: number;
+  text: string;
+  excerpt: string;
+  date: string;
+  destination?: string;
+  airline?: string;
+  price?: string;
+  telegramUrl: string;
+  moreInfoUrl: string;
+  imageUrl?: string;
+}
