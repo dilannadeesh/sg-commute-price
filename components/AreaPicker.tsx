@@ -18,6 +18,8 @@ interface Props {
   label: string;
   placeholder: string;
   anchor?: "left" | "right";
+  locating?: boolean;
+  onLocate?: () => void;
 }
 
 async function searchOneMap(query: string): Promise<Area[]> {
@@ -46,7 +48,7 @@ async function searchOneMap(query: string): Promise<Area[]> {
   }
 }
 
-export default function AreaPicker({ value, onChange, label, placeholder, anchor = "left" }: Props) {
+export default function AreaPicker({ value, onChange, label, placeholder, anchor = "left", locating = false, onLocate }: Props) {
   const [open, setOpen]         = useState(false);
   const [q, setQ]               = useState("");
   const [searching, setSearching] = useState(false);
@@ -111,6 +113,15 @@ export default function AreaPicker({ value, onChange, label, placeholder, anchor
     setAddrResults([]);
   }
 
+  function handleLocate() {
+    setOpen(false);
+    onLocate?.();
+  }
+
+  const displayValue = locating
+    ? "Detecting location…"
+    : value ? value.name : null;
+
   return (
     <div ref={ref} style={{ position: "relative", flex: 1, minWidth: 0 }}>
       <button
@@ -122,9 +133,9 @@ export default function AreaPicker({ value, onChange, label, placeholder, anchor
         <span className="cpc-field-label">{label}</span>
         <span
           className="cpc-field-value"
-          style={{ color: value ? "var(--color-ink)" : "var(--color-muted)" }}
+          style={{ color: displayValue ? (locating ? "var(--color-muted)" : "var(--color-ink)") : "var(--color-muted)" }}
         >
-          {value ? value.name : placeholder}
+          {displayValue ?? placeholder}
         </span>
       </button>
 
@@ -144,6 +155,27 @@ export default function AreaPicker({ value, onChange, label, placeholder, anchor
           </div>
 
           <div className="cpc-popover-list">
+            {/* Use my location */}
+            {onLocate && (
+              <div>
+                <button
+                  className="cpc-popover-item cpc-locate-option"
+                  onClick={handleLocate}
+                  disabled={locating}
+                >
+                  <Icon name="locate" size={16} color="var(--color-primary)" />
+                  <div>
+                    <div style={{ font: "var(--type-body-sm)", color: "var(--color-primary)", fontWeight: 600 }}>
+                      {locating ? "Detecting your location…" : "Use my current location"}
+                    </div>
+                    <div style={{ font: "var(--type-caption-sm)", color: "var(--color-muted)" }}>
+                      Allow browser location access
+                    </div>
+                  </div>
+                </button>
+              </div>
+            )}
+
             {/* Address search results */}
             {addrResults.length > 0 && (
               <div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { SG_AREAS, TIME_BLOCKS, FLEXAR_REGIONS_DEFAULT, quoteAll, findNearestArea, haversineKm } from "@/lib/quote";
 import type { Area, TimeBlock } from "@/lib/types";
 import AreaPicker from "@/components/AreaPicker";
@@ -8,14 +8,11 @@ import TimePicker from "@/components/TimePicker";
 import ResultRow from "@/components/ResultRow";
 import Icon from "@/components/Icon";
 
-const DEFAULT_ORIGIN_ID = "tiong-bahru";
-const DEFAULT_DEST_ID   = "tampines";
-const DEFAULT_TIME_ID   = "08-10";
+const DEFAULT_DEST_ID  = "tampines";
+const DEFAULT_TIME_ID  = "08-10";
 
 export default function Page() {
-  const [origin, setOrigin] = useState<Area | null>(
-    () => SG_AREAS.find(a => a.id === DEFAULT_ORIGIN_ID) ?? null
-  );
+  const [origin, setOrigin] = useState<Area | null>(null);
   const [dest, setDest] = useState<Area | null>(
     () => SG_AREAS.find(a => a.id === DEFAULT_DEST_ID) ?? null
   );
@@ -23,18 +20,40 @@ export default function Page() {
     () => TIME_BLOCKS.find(t => t.id === DEFAULT_TIME_ID) ?? TIME_BLOCKS[4]
   );
   const [stopover, setStopover] = useState(1);
+  const [locating, setLocating] = useState(false);
 
-  // Read URL params on mount, then request geolocation for From
+  const requestLocation = useCallback(() => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        const nearest = findNearestArea(lat, lng);
+        setOrigin({
+          id:      nearest.id,
+          name:    `Near ${nearest.name}`,
+          region:  nearest.region,
+          lat,
+          lng,
+          address: `Current location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+        });
+        setLocating(false);
+      },
+      () => {
+        // Permission denied or unavailable — fall back to default
+        setOrigin(SG_AREAS.find(a => a.id === "tiong-bahru") ?? null);
+        setLocating(false);
+      },
+      { timeout: 10000, maximumAge: 60000, enableHighAccuracy: false }
+    );
+  }, []);
+
+  // On mount: read URL params for dest/time, then request location for From
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const fromId = params.get("from");
-    const toId   = params.get("to");
-    const tId    = params.get("t");
+    const toId = params.get("to");
+    const tId  = params.get("t");
 
-    if (fromId) {
-      const a = SG_AREAS.find(x => x.id === fromId);
-      if (a) setOrigin(a);
-    }
     if (toId) {
       const a = SG_AREAS.find(x => x.id === toId);
       if (a) setDest(a);
@@ -44,38 +63,16 @@ export default function Page() {
       if (t) setTime(t);
     }
 
-    // Always request geolocation on load — overrides URL param if granted
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          const { latitude: lat, longitude: lng } = pos.coords;
-          const nearest = findNearestArea(lat, lng);
-
-          // Build a display name: "Near [Area]" or use the actual coords
-          // as a searched-address entry so the distance calc is accurate
-          const currentLoc: Area = {
-            id:      nearest.id,
-            name:    `Near ${nearest.name}`,
-            region:  nearest.region,
-            lat,
-            lng,
-            address: `Current location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
-          };
-          setOrigin(currentLoc);
-        },
-        () => { /* user denied — keep default */ }
-      );
-    }
+    requestLocation();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sync state to URL
+  // Sync dest and time to URL (From excluded — it's always geolocation)
   useEffect(() => {
     const params = new URLSearchParams();
-    if (origin && !origin.address) params.set("from", origin.id);
-    if (dest   && !dest.address)   params.set("to",   dest.id);
+    if (dest && !dest.address) params.set("to", dest.id);
     params.set("t", time.id);
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
-  }, [origin, dest, time]);
+  }, [dest, time]);
 
   const flexarOpts = useMemo(
     () => ({ servicedRegions: FLEXAR_REGIONS_DEFAULT }),
@@ -126,11 +123,23 @@ export default function Page() {
         <div className="cpc-search-bar">
           <AreaPicker
             label="From"
-            placeholder="Pick origin or search address"
+            placeholder="Allow location or pick area"
             value={origin}
             onChange={setOrigin}
             anchor="left"
+            locating={locating}
+            onLocate={requestLocation}
           />
+          <button
+            type="button"
+            className="cpc-locate-btn"
+            onClick={requestLocation}
+            disabled={locating}
+            title="Use my current location"
+            aria-label="Use my current location"
+          >
+            <Icon name="locate" size={18} />
+          </button>
           <button className="cpc-swap" onClick={swap} aria-label="Swap">
             <Icon name="swap" size={18} />
           </button>
@@ -154,7 +163,7 @@ export default function Page() {
                     <span className="cpc-trip-pin" style={{ background: "var(--color-ink)" }}>A</span>
                     <div>
                       <div className="cpc-trip-area-name" style={{ wordBreak: "break-word" }}>
-                        {origin.address ? origin.name : origin.name}
+                        {origin.name}
                       </div>
                       <div className="cpc-trip-area-region">{origin.region}</div>
                     </div>
@@ -226,9 +235,13 @@ export default function Page() {
           </div>
         ) : (
           <div className="cpc-empty">
-            {origin && dest && origin.id === dest.id
+            {!origin && !locating
+              ? "Allow location access or pick an origin area to compare."
+              : locating
+              ? "Detecting your location…"
+              : origin && dest && origin.id === dest.id
               ? "Origin and destination are the same area — try a different combination."
-              : "Pick a different origin and destination to compare."}
+              : "Pick a destination to compare options."}
           </div>
         )}
       </div>

@@ -43,6 +43,8 @@ export default function Icon({ name, size = 18, stroke = 2, color = "currentColo
       return <svg {...c}><path d="M3 7h13l-3-3M21 17H8l3 3"/></svg>;
     case "chevron":
       return <svg {...c}><path d="M6 9l6 6 6-6"/></svg>;
+    case "locate":
+      return <svg {...c}><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="9"/></svg>;
     default:
       return null;
   }
