@@ -106,7 +106,7 @@ export interface Deal {
   excerpt: string;
   date: string;
   tags: string[];
-  url: string;
-  imageFileId?: string;
+  telegramUrl: string;
+  moreInfoUrl: string;
   imageUrl?: string;
 }

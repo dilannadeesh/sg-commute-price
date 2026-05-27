@@ -12,6 +12,15 @@ const CATEGORY_EMOJI: Record<string, string> = {
   "#hawker": "🏮", "#dineout": "🍴", "#1for1": "2️⃣", "#promo": "🎉",
 };
 
+const GRADIENTS = [
+  "linear-gradient(135deg, #ff385c22 0%, #ff6b3522 100%)",
+  "linear-gradient(135deg, #00B14F22 0%, #00d46822 100%)",
+  "linear-gradient(135deg, #1F6FEB22 0%, #7A4DFF22 100%)",
+  "linear-gradient(135deg, #FF7A0022 0%, #FFB80022 100%)",
+  "linear-gradient(135deg, #7A4DFF22 0%, #ff385c22 100%)",
+  "linear-gradient(135deg, #0AAB1C22 0%, #00B14F22 100%)",
+];
+
 function getCategoryEmoji(tags: string[]): string {
   for (const tag of tags) {
     if (CATEGORY_EMOJI[tag]) return CATEGORY_EMOJI[tag];
@@ -19,20 +28,8 @@ function getCategoryEmoji(tags: string[]): string {
   return "🍴";
 }
 
-function getCardGradient(id: number): string {
-  const gradients = [
-    "linear-gradient(135deg, #ff385c22 0%, #ff6b3522 100%)",
-    "linear-gradient(135deg, #00B14F22 0%, #00d46822 100%)",
-    "linear-gradient(135deg, #1F6FEB22 0%, #7A4DFF22 100%)",
-    "linear-gradient(135deg, #FF7A0022 0%, #FFB80022 100%)",
-    "linear-gradient(135deg, #7A4DFF22 0%, #ff385c22 100%)",
-    "linear-gradient(135deg, #0AAB1C22 0%, #00B14F22 100%)",
-  ];
-  return gradients[id % gradients.length];
-}
-
 function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
+  const diff  = Date.now() - new Date(dateStr).getTime();
   const mins  = Math.floor(diff / 60_000);
   const hours = Math.floor(diff / 3_600_000);
   const days  = Math.floor(diff / 86_400_000);
@@ -46,13 +43,17 @@ interface Props { deal: Deal; }
 
 export default function DealCard({ deal }: Props) {
   const emoji    = getCategoryEmoji(deal.tags);
-  const gradient = getCardGradient(deal.id);
-
-  // Tags to show (exclude #deals itself)
+  const gradient = GRADIENTS[deal.id % GRADIENTS.length];
   const displayTags = deal.tags.filter(t => t !== "#deals").slice(0, 4);
 
   return (
-    <article className="deal-card">
+    <a
+      href={deal.moreInfoUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="deal-card"
+      aria-label={deal.excerpt}
+    >
       {deal.imageUrl ? (
         <div className="deal-card-img">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -77,17 +78,9 @@ export default function DealCard({ deal }: Props) {
 
         <div className="deal-card-footer">
           <span className="deal-card-time">{timeAgo(deal.date)}</span>
-          <a
-            href={deal.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="deal-card-cta"
-            onClick={e => e.stopPropagation()}
-          >
-            View deal →
-          </a>
+          <span className="deal-card-cta">More info →</span>
         </div>
       </div>
-    </article>
+    </a>
   );
 }
