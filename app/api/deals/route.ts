@@ -1,22 +1,22 @@
 import { NextResponse } from "next/server";
 import type { Deal } from "@/lib/types";
 
-const BOT_TOKEN   = process.env.TELEGRAM_BOT_TOKEN;
-const CHANNEL_ID  = process.env.TELEGRAM_CHANNEL_ID ?? "@sgfooddeals";
+const CHANNEL = "sgfooddeals";
 
-interface TgPhotoSize { file_id: string; width: number; height: number; file_size?: number; }
-interface TgEntity   { type: string; offset: number; length: number; }
-interface TgPost {
-  message_id: number;
-  chat: { id: number; username?: string; type: string };
-  text?: string;
-  caption?: string;
-  photo?: TgPhotoSize[];
-  date: number;
-  entities?: TgEntity[];
-  caption_entities?: TgEntity[];
+// ── HTML helpers ──────────────────────────────────────────────────────────────
+
+function stripHtml(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#(\d+);/g, (_, c) => String.fromCharCode(Number(c)))
+    .replace(/&nbsp;/g, " ")
+    .trim();
 }
-interface TgUpdate { update_id: number; channel_post?: TgPost; }
 
 function extractTags(text: string): string[] {
   return (text.match(/#[\w]+/gi) ?? []).map(t => t.toLowerCase());
@@ -24,24 +24,71 @@ function extractTags(text: string): string[] {
 
 function buildExcerpt(text: string): string {
   return text
-    .replace(/#[\w]+/g, "")   // strip hashtags
-    .replace(/https?:\/\/\S+/g, "") // strip URLs
+    .replace(/#[\w]+/g, "")
+    .replace(/https?:\/\/\S+/g, "")
     .replace(/\n{2,}/g, "\n")
     .trim()
-    .slice(0, 220);
+    .slice(0, 240);
 }
 
-async function getImageUrl(fileId: string): Promise<string | undefined> {
-  if (!BOT_TOKEN) return undefined;
-  try {
-    const res  = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getFile?file_id=${fileId}`);
-    const data = await res.json();
-    if (!data.ok) return undefined;
-    return `https://api.telegram.org/file/bot${BOT_TOKEN}/${data.result.file_path}`;
-  } catch { return undefined; }
+// ── Scrape t.me/s/{channel} (public channel web preview) ─────────────────────
+
+async function fetchFromPublicChannel(): Promise<Deal[]> {
+  const res = await fetch(`https://t.me/s/${CHANNEL}`, {
+    headers: { "User-Agent": "Mozilla/5.0 (compatible; SGliving/1.0; +https://sgliving.life)" },
+    next: { revalidate: 3600 },
+  });
+
+  if (!res.ok) return [];
+
+  const html = await res.text();
+  const deals: Deal[] = [];
+
+  // Each message block starts with data-post="channel/id"
+  // We split on that anchor and process each chunk independently
+  const chunks = html.split(/(?=<[^>]*?data-post="sgfooddeals\/\d+")/);
+
+  for (const chunk of chunks) {
+    // Get message ID
+    const idMatch = chunk.match(/data-post="sgfooddeals\/(\d+)"/);
+    if (!idMatch) continue;
+    const messageId = parseInt(idMatch[1]);
+
+    // Text lives in .tgme_widget_message_text (may have nested spans/links)
+    const textBlockMatch = chunk.match(
+      /class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/
+    );
+    if (!textBlockMatch) continue;
+
+    const rawText = stripHtml(textBlockMatch[1]);
+
+    // Only posts tagged #deals
+    if (!rawText.toLowerCase().includes("#deals")) continue;
+
+    // Date from <time datetime="...">
+    const dateMatch = chunk.match(/datetime="([^"]+)"/);
+    const date = dateMatch ? new Date(dateMatch[1]).toISOString() : new Date().toISOString();
+
+    // Photo: background-image:url('https://...')
+    const photoMatch = chunk.match(/background-image:url\('([^']+)'\)/);
+    const imageUrl = photoMatch?.[1];
+
+    deals.push({
+      id: messageId,
+      text: rawText,
+      excerpt: buildExcerpt(rawText),
+      date,
+      tags: extractTags(rawText),
+      url: `https://t.me/${CHANNEL}/${messageId}`,
+      imageUrl,
+    });
+  }
+
+  return deals.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
-// --- Mock data shown when env vars are not yet configured ---
+// ── Mock data (fallback when scraping fails or in dev without internet) ───────
+
 const MOCK_DEALS: Deal[] = [
   {
     id: 1,
@@ -49,7 +96,7 @@ const MOCK_DEALS: Deal[] = [
     excerpt: "1-for-1 Burgers at Shake Shack Jewel today only! Valid 11am–3pm. No code needed — just show this post.",
     date: new Date(Date.now() - 2 * 3600_000).toISOString(),
     tags: ["#deals", "#burger", "#1for1"],
-    url: "https://t.me/sgfooddeals/1",
+    url: `https://t.me/${CHANNEL}/1`,
   },
   {
     id: 2,
@@ -57,7 +104,7 @@ const MOCK_DEALS: Deal[] = [
     excerpt: "$5 ramen at Ippudo Singapore this weekend. Valid Sat & Sun, dine-in only.",
     date: new Date(Date.now() - 6 * 3600_000).toISOString(),
     tags: ["#deals", "#ramen", "#japanese", "#weekend"],
-    url: "https://t.me/sgfooddeals/2",
+    url: `https://t.me/${CHANNEL}/2`,
   },
   {
     id: 3,
@@ -65,7 +112,7 @@ const MOCK_DEALS: Deal[] = [
     excerpt: "Buy 2 get 1 FREE at LiHO Tea all outlets! Use promo code LIHO3FOR2 on their app. Valid until end of month.",
     date: new Date(Date.now() - 10 * 3600_000).toISOString(),
     tags: ["#deals", "#bubbletea", "#liho", "#drinks"],
-    url: "https://t.me/sgfooddeals/3",
+    url: `https://t.me/${CHANNEL}/3`,
   },
   {
     id: 4,
@@ -73,7 +120,7 @@ const MOCK_DEALS: Deal[] = [
     excerpt: "Pizza Hut Singapore — 40% off all pizzas online orders. Use code: PIZZASG40. Min order $30.",
     date: new Date(Date.now() - 18 * 3600_000).toISOString(),
     tags: ["#deals", "#pizza", "#delivery"],
-    url: "https://t.me/sgfooddeals/4",
+    url: `https://t.me/${CHANNEL}/4`,
   },
   {
     id: 5,
@@ -81,7 +128,7 @@ const MOCK_DEALS: Deal[] = [
     excerpt: "Free coffee with any pastry at Starbucks! Redeem via the Starbucks app. Mon–Fri 8–10am only.",
     date: new Date(Date.now() - 24 * 3600_000).toISOString(),
     tags: ["#deals", "#coffee", "#starbucks", "#breakfast"],
-    url: "https://t.me/sgfooddeals/5",
+    url: `https://t.me/${CHANNEL}/5`,
   },
   {
     id: 6,
@@ -89,80 +136,26 @@ const MOCK_DEALS: Deal[] = [
     excerpt: "$8.80 bento sets at Ichiban Boshi. Includes miso soup + salad. All day every day this month!",
     date: new Date(Date.now() - 30 * 3600_000).toISOString(),
     tags: ["#deals", "#japanese", "#bento", "#lunch"],
-    url: "https://t.me/sgfooddeals/6",
+    url: `https://t.me/${CHANNEL}/6`,
   },
 ];
 
-export const revalidate = 3600; // cache for 1 hour
+// ── Handler ───────────────────────────────────────────────────────────────────
+
+export const revalidate = 3600; // Next.js ISR: revalidate every hour
 
 export async function GET() {
-  // Return mock data until bot token is configured
-  if (!BOT_TOKEN) {
-    return NextResponse.json({
-      deals: MOCK_DEALS,
-      updatedAt: new Date().toISOString(),
-      source: "mock",
-    });
-  }
-
   try {
-    const tgRes = await fetch(
-      `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?allowed_updates=["channel_post"]&limit=100`,
-      { next: { revalidate: 3600 } }
-    );
-    const tgData = await tgRes.json();
+    const deals = await fetchFromPublicChannel();
 
-    if (!tgData.ok) {
-      return NextResponse.json(
-        { deals: MOCK_DEALS, error: tgData.description, source: "mock" },
-        { status: 200 }
-      );
+    if (deals.length > 0) {
+      return NextResponse.json({ deals, updatedAt: new Date().toISOString(), source: "telegram" });
     }
 
-    const updates: TgUpdate[] = tgData.result;
-    const channelUsername = CHANNEL_ID.startsWith("@")
-      ? CHANNEL_ID.slice(1).toLowerCase()
-      : null;
-
-    const filtered = updates.filter(u => {
-      const post = u.channel_post;
-      if (!post) return false;
-      const text = post.text ?? post.caption ?? "";
-      if (!text.toLowerCase().includes("#deals")) return false;
-      // Filter to the configured channel
-      if (channelUsername) return post.chat.username?.toLowerCase() === channelUsername;
-      return post.chat.id.toString() === CHANNEL_ID;
-    });
-
-    const deals: Deal[] = await Promise.all(
-      filtered.map(async u => {
-        const post = u.channel_post!;
-        const text = post.text ?? post.caption ?? "";
-        const chanUsername = post.chat.username;
-
-        // Pick the largest photo variant
-        const photo = post.photo?.sort((a, b) => b.width - a.width)[0];
-        const imageUrl = photo ? await getImageUrl(photo.file_id) : undefined;
-
-        return {
-          id: post.message_id,
-          text,
-          excerpt: buildExcerpt(text),
-          date: new Date(post.date * 1000).toISOString(),
-          tags: extractTags(text),
-          url: chanUsername
-            ? `https://t.me/${chanUsername}/${post.message_id}`
-            : `https://t.me/c/${Math.abs(post.chat.id)}/${post.message_id}`,
-          imageUrl,
-        };
-      })
-    );
-
-    deals.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-    return NextResponse.json({ deals, updatedAt: new Date().toISOString(), source: "telegram" });
+    // Scraping returned nothing — serve mock data
+    return NextResponse.json({ deals: MOCK_DEALS, updatedAt: new Date().toISOString(), source: "mock" });
   } catch (err) {
-    console.error("Telegram fetch error:", err);
-    return NextResponse.json({ deals: MOCK_DEALS, source: "mock", error: "fetch failed" });
+    console.error("[/api/deals] fetch error:", err);
+    return NextResponse.json({ deals: MOCK_DEALS, updatedAt: new Date().toISOString(), source: "mock" });
   }
 }
