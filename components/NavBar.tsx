@@ -8,16 +8,13 @@ export default function NavBar() {
 
   return (
     <nav className="cpc-nav">
-      <Link
-        href="/"
-        style={{ font: "700 18px var(--font-sans)", color: "var(--color-ink)", letterSpacing: "-0.3px", textDecoration: "none" }}
-      >
-        SGliving
-      </Link>
+      <div className="cpc-nav-brand-row">
+        <Link href="/" className="cpc-nav-brand">SGliving</Link>
+      </div>
       <div className="cpc-nav-tabs">
-        <Link href="/"             className={"cpc-nav-tab" + (pathname === "/"                      ? " is-active" : "")}>Commute</Link>
-        <Link href="/food-deals"   className={"cpc-nav-tab" + (pathname.startsWith("/food-deals")    ? " is-active" : "")}>Food Deals</Link>
-        <Link href="/airline-deals" className={"cpc-nav-tab" + (pathname.startsWith("/airline-deals") ? " is-active" : "")}>Airline Deals</Link>
+        <Link href="/"              className={"cpc-nav-tab" + (pathname === "/"                       ? " is-active" : "")}>Commute</Link>
+        <Link href="/food-deals"    className={"cpc-nav-tab" + (pathname.startsWith("/food-deals")     ? " is-active" : "")}>Food Deals</Link>
+        <Link href="/airline-deals" className={"cpc-nav-tab" + (pathname.startsWith("/airline-deals")  ? " is-active" : "")}>Airline Deals</Link>
       </div>
     </nav>
   );
