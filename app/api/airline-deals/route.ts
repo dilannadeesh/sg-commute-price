@@ -97,27 +97,13 @@ function isSingaporeDeal(text: string): boolean {
   );
 }
 
-// ── Wikipedia tourist-attraction image ────────────────────────────────────────
+// ── Destination image proxy URL ───────────────────────────────────────────────
+// Images load from /api/destination-image/[slug] which proxies Wikipedia
+// server-side and caches for 7 days — no client-side cross-origin issues.
 
-async function getDestinationImage(destination: string): Promise<string | undefined> {
-  const term = destination === "KL" ? "Kuala Lumpur" : destination;
-  try {
-    const res = await fetch(
-      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(term)}`,
-      {
-        headers: { "User-Agent": "SGliving/1.0 (https://sgliving.life; contact@sgliving.life)" },
-        signal: AbortSignal.timeout(3000),
-        next: { revalidate: 604800 }, // cache 7 days
-      }
-    );
-    if (!res.ok) return undefined;
-    const data = await res.json();
-    const src = data.thumbnail?.source as string | undefined;
-    if (!src) return undefined;
-    return src.replace(/\/\d+px-/, "/800px-");
-  } catch {
-    return undefined;
-  }
+function destinationImageUrl(destination: string): string {
+  const slug = destination.toLowerCase().replace(/\s+/g, "-");
+  return `/api/destination-image/${encodeURIComponent(slug)}`;
 }
 
 // ── Scrape t.me/s/{channel} ───────────────────────────────────────────────────
@@ -157,19 +143,19 @@ async function fetchFromPublicChannel(): Promise<AirlineDeal[]> {
     const date = dateMatch ? new Date(dateMatch[1]).toISOString() : new Date().toISOString();
     if (Date.now() - new Date(date).getTime() > MAX_AGE_MS) continue;
 
-    const photoMatch = chunk.match(/background-image:url\('([^']+)'\)/);
+    const dest = extractDestination(rawText);
 
     deals.push({
       id:          messageId,
       text:        rawText,
       excerpt:     buildExcerpt(rawText),
       date,
-      destination: extractDestination(rawText),
+      destination: dest,
       airline:     extractAirline(rawText),
       price:       extractPrice(rawText),
       telegramUrl: `https://t.me/${CHANNEL}/${messageId}`,
       moreInfoUrl: externalUrls[0],
-      imageUrl:    photoMatch?.[1],
+      imageUrl:    dest ? destinationImageUrl(dest) : undefined,
     });
   }
 
@@ -189,6 +175,7 @@ const MOCK_DEALS: AirlineDeal[] = [
     price: "S$299",
     telegramUrl: `https://t.me/${CHANNEL}/1`,
     moreInfoUrl: "https://www.flyscoot.com/en/",
+    imageUrl: destinationImageUrl("Tokyo"),
   },
   {
     id: 2,
@@ -200,6 +187,7 @@ const MOCK_DEALS: AirlineDeal[] = [
     price: "S$89",
     telegramUrl: `https://t.me/${CHANNEL}/2`,
     moreInfoUrl: "https://www.airasia.com/",
+    imageUrl: destinationImageUrl("Bali"),
   },
   {
     id: 3,
@@ -211,6 +199,7 @@ const MOCK_DEALS: AirlineDeal[] = [
     price: "S$159",
     telegramUrl: `https://t.me/${CHANNEL}/3`,
     moreInfoUrl: "https://www.jetstar.com/sg/en/",
+    imageUrl: destinationImageUrl("Bangkok"),
   },
   {
     id: 4,
@@ -222,6 +211,7 @@ const MOCK_DEALS: AirlineDeal[] = [
     price: "S$549",
     telegramUrl: `https://t.me/${CHANNEL}/4`,
     moreInfoUrl: "https://www.singaporeair.com/",
+    imageUrl: destinationImageUrl("Seoul"),
   },
   {
     id: 5,
@@ -233,6 +223,7 @@ const MOCK_DEALS: AirlineDeal[] = [
     price: "S$799",
     telegramUrl: `https://t.me/${CHANNEL}/5`,
     moreInfoUrl: "https://www.qantas.com/sg/",
+    imageUrl: destinationImageUrl("Sydney"),
   },
   {
     id: 6,
@@ -244,29 +235,9 @@ const MOCK_DEALS: AirlineDeal[] = [
     price: "S$59",
     telegramUrl: `https://t.me/${CHANNEL}/6`,
     moreInfoUrl: "https://www.malaysiaairlines.com/",
+    imageUrl: destinationImageUrl("Kuala Lumpur"),
   },
 ];
-
-// ── Enrich deals with Wikipedia images ───────────────────────────────────────
-
-async function enrichWithImages(deals: AirlineDeal[]): Promise<AirlineDeal[]> {
-  const uniqueDests = [...new Set(deals.map(d => d.destination).filter(Boolean))] as string[];
-  const imageMap = new Map<string, string>();
-
-  await Promise.all(
-    uniqueDests.map(async dest => {
-      const img = await getDestinationImage(dest);
-      if (img) imageMap.set(dest.toLowerCase(), img);
-    })
-  );
-
-  return deals.map(deal => ({
-    ...deal,
-    imageUrl: deal.destination
-      ? (imageMap.get(deal.destination.toLowerCase()) ?? deal.imageUrl)
-      : deal.imageUrl,
-  }));
-}
 
 // ── Handler ───────────────────────────────────────────────────────────────────
 
@@ -274,19 +245,13 @@ export const revalidate = 86400;
 
 export async function GET() {
   try {
-    let deals = await fetchFromPublicChannel();
-    let source = "telegram";
-
-    if (deals.length === 0) {
-      deals = [...MOCK_DEALS];
-      source = "mock";
+    const deals = await fetchFromPublicChannel();
+    if (deals.length > 0) {
+      return NextResponse.json({ deals, updatedAt: new Date().toISOString(), source: "telegram" });
     }
-
-    const enriched = await enrichWithImages(deals);
-    return NextResponse.json({ deals: enriched, updatedAt: new Date().toISOString(), source });
+    return NextResponse.json({ deals: MOCK_DEALS, updatedAt: new Date().toISOString(), source: "mock" });
   } catch (err) {
     console.error("[/api/airline-deals] error:", err);
-    const enriched = await enrichWithImages([...MOCK_DEALS]).catch(() => MOCK_DEALS);
-    return NextResponse.json({ deals: enriched, updatedAt: new Date().toISOString(), source: "mock" });
+    return NextResponse.json({ deals: MOCK_DEALS, updatedAt: new Date().toISOString(), source: "mock" });
   }
 }

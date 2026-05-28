@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { AirlineDeal } from "@/lib/types";
 
 const AIRLINE_EMOJI: Record<string, string> = {
@@ -76,6 +77,8 @@ interface Props { deal: AirlineDeal; }
 export default function AirlineDealCard({ deal }: Props) {
   const emoji    = getEmoji(deal);
   const gradient = GRADIENTS[deal.id % GRADIENTS.length];
+  const [imgFailed, setImgFailed] = useState(false);
+  const showImage = !!deal.imageUrl && !imgFailed;
 
   return (
     <a
@@ -85,13 +88,14 @@ export default function AirlineDealCard({ deal }: Props) {
       className="deal-card airline-deal-card"
       aria-label={deal.excerpt}
     >
-      {deal.imageUrl ? (
+      {showImage ? (
         <div className="deal-card-img-cover">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={deal.imageUrl}
-            alt={deal.destination ? `${deal.destination} attraction` : "Destination"}
+            alt={deal.destination ? `${deal.destination} tourist attraction` : "Destination"}
             loading="lazy"
+            onError={() => setImgFailed(true)}
           />
           <div className="deal-card-img-overlay">
             <div className="airline-route-overlay">
@@ -108,7 +112,7 @@ export default function AirlineDealCard({ deal }: Props) {
       )}
 
       <div className="deal-card-body">
-        {!deal.imageUrl && (
+        {!showImage && (
           <div className="airline-route-row">
             <span className="airline-origin">Singapore</span>
             <span className="airline-arrow">✈</span>
