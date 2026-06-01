@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import type { Deal } from "@/lib/types";
 
 const CATEGORY_EMOJI: Record<string, string> = {
+  // Food
   "#burger": "🍔", "#pizza": "🍕", "#sushi": "🍣", "#japanese": "🍱",
   "#ramen": "🍜", "#coffee": "☕", "#breakfast": "🥞", "#lunch": "🍽️",
   "#dinner": "🌙", "#delivery": "🛵", "#bento": "🍱", "#drinks": "🧋",
@@ -10,6 +12,10 @@ const CATEGORY_EMOJI: Record<string, string> = {
   "#dessert": "🍨", "#cake": "🎂", "#chinese": "🥢", "#western": "🥩",
   "#indian": "🍛", "#thai": "🍲", "#korean": "🥘", "#malay": "🍛",
   "#hawker": "🏮", "#dineout": "🍴", "#1for1": "2️⃣", "#promo": "🎉",
+  // Weekend activities
+  "#outdoor": "🌿", "#indoor": "🏛️", "#hiking": "🥾", "#beach": "🏖️",
+  "#sports": "⚽", "#museum": "🖼️", "#arts": "🎨", "#events": "🎭",
+  "#family": "👨‍👩‍👧", "#kids": "🧒", "#free": "🎁", "#weekend": "🌤️",
 };
 
 const GRADIENTS = [
@@ -42,9 +48,11 @@ function timeAgo(dateStr: string): string {
 interface Props { deal: Deal; }
 
 export default function DealCard({ deal }: Props) {
-  const emoji    = getCategoryEmoji(deal.tags);
-  const gradient = GRADIENTS[deal.id % GRADIENTS.length];
+  const emoji       = getCategoryEmoji(deal.tags);
+  const gradient    = GRADIENTS[deal.id % GRADIENTS.length];
   const displayTags = deal.tags.filter(t => t !== "#deals").slice(0, 4);
+  const [imgFailed, setImgFailed] = useState(false);
+  const showImage = !!deal.imageUrl && !imgFailed;
 
   return (
     <a
@@ -54,10 +62,15 @@ export default function DealCard({ deal }: Props) {
       className="deal-card"
       aria-label={deal.excerpt}
     >
-      {deal.imageUrl ? (
+      {showImage ? (
         <div className="deal-card-img">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={deal.imageUrl} alt="Deal" loading="lazy" />
+          <img
+            src={deal.imageUrl}
+            alt="Deal"
+            loading="lazy"
+            onError={() => setImgFailed(true)}
+          />
         </div>
       ) : (
         <div className="deal-card-img-placeholder" style={{ background: gradient }}>

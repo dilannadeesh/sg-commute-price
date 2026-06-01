@@ -43,6 +43,24 @@ function extractExternalUrls(html: string): string[] {
     );
 }
 
+// Try three places Telegram puts images, in descending quality order:
+// 1. data-zoom-src  — full-size photo (best)
+// 2. tgme_widget_message_photo_inner_image src — direct <img> tag
+// 3. background-image:url() — blurred CSS thumbnail (fallback)
+function extractTelegramImage(chunk: string): string | undefined {
+  const zoom = chunk.match(/data-zoom-src="([^"]+)"/);
+  if (zoom) return zoom[1];
+
+  const inner = chunk.match(/tgme_widget_message_photo_inner_image[^>]*src="([^"]+)"/);
+  if (inner) {
+    const src = inner[1];
+    return src.startsWith("//") ? `https:${src}` : src;
+  }
+
+  const bg = chunk.match(/background-image:url\('([^']+)'\)/);
+  return bg?.[1];
+}
+
 // ── Paginated scrape of t.me/s/{channel} ─────────────────────────────────────
 // Fetches page 1 then walks backwards via ?before={messageId} until either
 // the 60-day cutoff is reached or MAX_PAGES pages have been fetched.
@@ -101,8 +119,6 @@ async function fetchFromPublicChannel(): Promise<Deal[]> {
       const externalUrls = extractExternalUrls(blockHtml);
       if (externalUrls.length === 0) continue;
 
-      const photoMatch = chunk.match(/background-image:url\('([^']+)'\)/);
-
       allDeals.push({
         id:          messageId,
         text:        rawText,
@@ -111,7 +127,7 @@ async function fetchFromPublicChannel(): Promise<Deal[]> {
         tags:        extractTags(rawText),
         telegramUrl: `https://t.me/${CHANNEL}/${messageId}`,
         moreInfoUrl: externalUrls[0],
-        imageUrl:    photoMatch?.[1],
+        imageUrl:    extractTelegramImage(chunk),
       });
     }
 
