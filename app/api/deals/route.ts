@@ -92,6 +92,37 @@ function extractTelegramImage(chunk: string): string | undefined {
   return `/api/telegram-image?url=${encodeURIComponent(absolute)}`;
 }
 
+// ── Per-post OG image fetch ───────────────────────────────────────────────────
+// t.me/channel/N always has <meta property="og:image"> in its HTML head for
+// photo posts — this is server-rendered and far more reliable than trying to
+// extract CDN URLs from the channel-list page (which Telegram may JS-render).
+
+const BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+
+async function fetchPostOgImage(messageId: number): Promise<string | undefined> {
+  try {
+    const res = await fetch(`https://t.me/${CHANNEL}/${messageId}`, {
+      headers: {
+        "User-Agent":      BROWSER_UA,
+        "Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) return undefined;
+    const html = await res.text();
+    const m = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/i)
+           ?? html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:image"/i);
+    if (!m) return undefined;
+    const raw = m[1].replace(/&amp;/g, "&");
+    const absolute = raw.startsWith("//") ? `https:${raw}` : raw;
+    return `/api/telegram-image?url=${encodeURIComponent(absolute)}`;
+  } catch {
+    return undefined;
+  }
+}
+
 // ── Paginated scrape of t.me/s/{channel} ─────────────────────────────────────
 // Fetches page 1 then walks backwards via ?before={messageId} until either
 // the 60-day cutoff is reached or MAX_PAGES pages have been fetched.
@@ -171,6 +202,14 @@ async function fetchFromPublicChannel(): Promise<Deal[]> {
 
     url = `https://t.me/s/${CHANNEL}?before=${oldestId}`;
     page++;
+  }
+
+  // For every deal still missing an image, fetch its post page in parallel to
+  // get the og:image — runs once per day since the route is cached 24 h.
+  const needsImage = allDeals.filter(d => !d.imageUrl);
+  if (needsImage.length > 0) {
+    const images = await Promise.all(needsImage.map(d => fetchPostOgImage(d.id)));
+    needsImage.forEach((d, i) => { if (images[i]) d.imageUrl = images[i]; });
   }
 
   // Newest deals always on top
