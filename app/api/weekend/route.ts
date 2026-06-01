@@ -68,17 +68,17 @@ function extractTelegramImage(chunk: string): string | undefined {
   // 3. CSS background-image — Telegram may encode quotes as &#39; or use double/no quotes
   if (!raw) {
     const decoded = chunk.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&");
-    const m = decoded.match(/background-image:\s*url\(\s*['"]?(https?:\/\/[^'")\s]+)['"]?\s*\)/);
+    const m = decoded.match(
+      /background-image:\s*url\(\s*['"]?((?:https?:)?\/\/[^'")\s]+)['"]?\s*\)/
+    );
     if (m) raw = m[1];
   }
 
-  // 4. Any Telegram CDN URL anywhere in the chunk as last resort
+  // 4. Any Telegram CDN URL in the chunk — absolute last resort
   if (!raw) {
-    const m = chunk.match(/https?:\/\/cdn[^"'\s>)]*\.telegram-cdn\.org\/[^"'\s>)]+/);
-    if (m) raw = m[0];
-  }
-  if (!raw) {
-    const m = chunk.match(/https?:\/\/cdn[^"'\s>)]*\.cdn-telegram\.org\/[^"'\s>)]+/);
+    const m = chunk.match(
+      /(?:https?:)?\/\/cdn[^"'\s>)]*\.(?:telegram-cdn|cdn-telegram)\.org\/[^"'\s>)]+/
+    );
     if (m) raw = m[0];
   }
 
