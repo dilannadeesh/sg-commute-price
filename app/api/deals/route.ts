@@ -43,22 +43,33 @@ function extractExternalUrls(html: string): string[] {
     );
 }
 
-// Try three places Telegram puts images, in descending quality order:
-// 1. data-zoom-src  — full-size photo (best)
-// 2. tgme_widget_message_photo_inner_image src — direct <img> tag
-// 3. background-image:url() — blurred CSS thumbnail (fallback)
+// Try every place Telegram embeds images, best quality first.
+// Returns a proxy URL (/api/telegram-image?url=...) so the browser
+// never touches Telegram CDN directly — avoids CORS/referrer failures.
 function extractTelegramImage(chunk: string): string | undefined {
-  const zoom = chunk.match(/data-zoom-src="([^"]+)"/);
-  if (zoom) return zoom[1];
+  let raw: string | undefined;
 
-  const inner = chunk.match(/tgme_widget_message_photo_inner_image[^>]*src="([^"]+)"/);
-  if (inner) {
-    const src = inner[1];
-    return src.startsWith("//") ? `https:${src}` : src;
+  // 1. data-zoom-src — full-size original photo (best quality)
+  const zoom = chunk.match(/data-zoom-src="([^"]+)"/);
+  if (zoom) raw = zoom[1];
+
+  // 2. Direct <img> inside the photo wrapper
+  if (!raw) {
+    const inner = chunk.match(/tgme_widget_message_photo_inner_image[^>]*src="([^"]+)"/);
+    if (inner) raw = inner[1];
   }
 
-  const bg = chunk.match(/background-image:url\('([^']+)'\)/);
-  return bg?.[1];
+  // 3. CSS background-image thumbnail (always present for photo posts)
+  if (!raw) {
+    const bg = chunk.match(/background-image:url\('([^']+)'\)/);
+    if (bg) raw = bg[1];
+  }
+
+  if (!raw) return undefined;
+
+  // Normalise protocol-relative URLs, then wrap in our proxy
+  const absolute = raw.startsWith("//") ? `https:${raw}` : raw;
+  return `/api/telegram-image?url=${encodeURIComponent(absolute)}`;
 }
 
 // ── Paginated scrape of t.me/s/{channel} ─────────────────────────────────────
