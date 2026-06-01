@@ -1,18 +1,38 @@
 import { NextResponse } from "next/server";
 
-// Aliases for destinations that Wikipedia searches better with a full name
+// Aliases for destinations and topics that Wikipedia searches better with a full name
 const ALIASES: Record<string, string> = {
-  "kl":            "Kuala Lumpur",
-  "ho-chi-minh":   "Ho Chi Minh City",
-  "new-york":      "New York City",
-  "los-angeles":   "Los Angeles",
-  "san-francisco": "San Francisco",
-  "da-nang":       "Da Nang",
-  "siem-reap":     "Siem Reap",
-  "koh-samui":     "Ko Samui",
-  "chiang-mai":    "Chiang Mai",
-  "abu-dhabi":     "Abu Dhabi",
-  "gold-coast":    "Gold Coast, Queensland",
+  // Locations
+  "kl":               "Kuala Lumpur",
+  "ho-chi-minh":      "Ho Chi Minh City",
+  "new-york":         "New York City",
+  "los-angeles":      "Los Angeles",
+  "san-francisco":    "San Francisco",
+  "da-nang":          "Da Nang",
+  "siem-reap":        "Siem Reap",
+  "koh-samui":        "Ko Samui",
+  "chiang-mai":       "Chiang Mai",
+  "abu-dhabi":        "Abu Dhabi",
+  "gold-coast":       "Gold Coast, Queensland",
+  // Food categories (used as DealCard onError fallbacks)
+  "burger":           "Hamburger",
+  "fried-chicken":    "Fried chicken",
+  "bubbletea":        "Bubble tea",
+  "hawker-centre":    "Hawker centre",
+  "japanese-cuisine": "Japanese cuisine",
+  "korean-cuisine":   "Korean cuisine",
+  "chinese-cuisine":  "Chinese cuisine",
+  "indian-cuisine":   "Indian cuisine",
+  "thai-cuisine":     "Thai cuisine",
+  "malay-cuisine":    "Malay cuisine",
+  "western-food":     "Western cuisine",
+  "dim-sum":          "Dim sum",
+  "barbeque":         "Barbecue",
+  // Weekend activity categories
+  "art-gallery":      "Art museum",
+  "nature-walk":      "Nature trail",
+  "water-sports":     "Water sport",
+  "kids-activities":  "Playground",
 };
 
 // Cache proxy responses for 7 days at the edge

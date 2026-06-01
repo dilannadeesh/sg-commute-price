@@ -3,8 +3,51 @@
 import { useState } from "react";
 import type { Deal } from "@/lib/types";
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  // Food
+// Maps deal tags → Wikipedia topic slug (reuses /api/destination-image proxy)
+const TAG_TOPIC: Record<string, string> = {
+  // Food & drink
+  "#burger":    "burger",
+  "#pizza":     "pizza",
+  "#ramen":     "ramen",
+  "#sushi":     "sushi",
+  "#japanese":  "japanese-cuisine",
+  "#korean":    "korean-cuisine",
+  "#chinese":   "chinese-cuisine",
+  "#indian":    "indian-cuisine",
+  "#thai":      "thai-cuisine",
+  "#malay":     "malay-cuisine",
+  "#western":   "western-food",
+  "#coffee":    "coffee",
+  "#bubbletea": "bubbletea",
+  "#dessert":   "dessert",
+  "#cake":      "cake",
+  "#chicken":   "fried-chicken",
+  "#seafood":   "seafood",
+  "#hawker":    "hawker-centre",
+  "#dimsum":    "dim-sum",
+  "#bbq":       "barbeque",
+  "#breakfast": "breakfast",
+  "#lunch":     "lunch",
+  "#dinner":    "dinner",
+  "#drinks":    "cocktail",
+  // Weekend activities
+  "#hiking":    "hiking",
+  "#beach":     "beach",
+  "#museum":    "museum",
+  "#arts":      "art-gallery",
+  "#sports":    "sport",
+  "#outdoor":   "nature",
+  "#indoor":    "escape-room",
+  "#family":    "picnic",
+  "#kids":      "kids-activities",
+  "#events":    "festival",
+  "#cycling":   "cycling",
+  "#yoga":      "yoga",
+  "#climbing":  "rock-climbing",
+};
+
+// Emoji fallback (last resort, no image at all)
+const TAG_EMOJI: Record<string, string> = {
   "#burger": "🍔", "#pizza": "🍕", "#sushi": "🍣", "#japanese": "🍱",
   "#ramen": "🍜", "#coffee": "☕", "#breakfast": "🥞", "#lunch": "🍽️",
   "#dinner": "🌙", "#delivery": "🛵", "#bento": "🍱", "#drinks": "🧋",
@@ -12,7 +55,6 @@ const CATEGORY_EMOJI: Record<string, string> = {
   "#dessert": "🍨", "#cake": "🎂", "#chinese": "🥢", "#western": "🥩",
   "#indian": "🍛", "#thai": "🍲", "#korean": "🥘", "#malay": "🍛",
   "#hawker": "🏮", "#dineout": "🍴", "#1for1": "2️⃣", "#promo": "🎉",
-  // Weekend activities
   "#outdoor": "🌿", "#indoor": "🏛️", "#hiking": "🥾", "#beach": "🏖️",
   "#sports": "⚽", "#museum": "🖼️", "#arts": "🎨", "#events": "🎭",
   "#family": "👨‍👩‍👧", "#kids": "🧒", "#free": "🎁", "#weekend": "🌤️",
@@ -27,11 +69,20 @@ const GRADIENTS = [
   "linear-gradient(135deg, #0AAB1C22 0%, #00B14F22 100%)",
 ];
 
-function getCategoryEmoji(tags: string[]): string {
+function getEmoji(tags: string[]): string {
   for (const tag of tags) {
-    if (CATEGORY_EMOJI[tag]) return CATEGORY_EMOJI[tag];
+    if (TAG_EMOJI[tag]) return TAG_EMOJI[tag];
   }
   return "🍴";
+}
+
+// Pick the best Wikipedia topic slug from the deal's tags
+function getFallbackImageUrl(tags: string[]): string | null {
+  for (const tag of tags) {
+    const topic = TAG_TOPIC[tag.toLowerCase()];
+    if (topic) return `/api/destination-image/${encodeURIComponent(topic)}`;
+  }
+  return null;
 }
 
 function timeAgo(dateStr: string): string {
@@ -48,11 +99,26 @@ function timeAgo(dateStr: string): string {
 interface Props { deal: Deal; }
 
 export default function DealCard({ deal }: Props) {
-  const emoji       = getCategoryEmoji(deal.tags);
   const gradient    = GRADIENTS[deal.id % GRADIENTS.length];
   const displayTags = deal.tags.filter(t => t !== "#deals").slice(0, 4);
-  const [imgFailed, setImgFailed] = useState(false);
-  const showImage = !!deal.imageUrl && !imgFailed;
+  const fallbackUrl = getFallbackImageUrl(deal.tags);
+
+  // Three-stage image chain:
+  //   1. Telegram CDN photo (from deal.imageUrl)
+  //   2. Wikipedia topic image via proxy (derived from deal tags)
+  //   3. Gradient + emoji placeholder (no network, always works)
+  const [imgSrc, setImgSrc]     = useState<string | null>(deal.imageUrl ?? fallbackUrl);
+  const [allFailed, setAllFailed] = useState(false);
+
+  function handleError() {
+    if (imgSrc === deal.imageUrl && fallbackUrl) {
+      // Stage 1 failed → try stage 2
+      setImgSrc(fallbackUrl);
+    } else {
+      // Stage 2 (or stage 1 with no fallback) failed → show placeholder
+      setAllFailed(true);
+    }
+  }
 
   return (
     <a
@@ -62,19 +128,19 @@ export default function DealCard({ deal }: Props) {
       className="deal-card"
       aria-label={deal.excerpt}
     >
-      {showImage ? (
+      {imgSrc && !allFailed ? (
         <div className="deal-card-img">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={deal.imageUrl}
-            alt="Deal"
+            src={imgSrc}
+            alt={displayTags[0] ?? "Deal"}
             loading="lazy"
-            onError={() => setImgFailed(true)}
+            onError={handleError}
           />
         </div>
       ) : (
         <div className="deal-card-img-placeholder" style={{ background: gradient }}>
-          <span className="deal-card-emoji">{emoji}</span>
+          <span className="deal-card-emoji">{getEmoji(deal.tags)}</span>
         </div>
       )}
 
