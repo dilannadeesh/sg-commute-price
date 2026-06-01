@@ -123,8 +123,11 @@ async function fetchFromPublicChannel(): Promise<Deal[]> {
       const blockHtml = textBlockMatch[1];
       const rawText   = stripHtml(blockHtml);
 
-      // Hard filter: must have at least one external "more info" URL
-      // (no #deals tag filter — @sgweekend is an activities channel, not a deals channel)
+      // Hard filter 1: must contain #article or #uniqueevent
+      const lowerText = rawText.toLowerCase();
+      if (!lowerText.includes("#article") && !lowerText.includes("#uniqueevent")) continue;
+
+      // Hard filter 2: must have at least one external "more info" URL
       const externalUrls = extractExternalUrls(blockHtml);
       if (externalUrls.length === 0) continue;
 
