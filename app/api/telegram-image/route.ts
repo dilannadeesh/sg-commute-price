@@ -4,6 +4,8 @@ const ALLOWED_HOSTS = [
   ".telegram-cdn.org",
   ".cdn-telegram.org",
   ".telegram.org",
+  ".telegramcdn.net",
+  ".t.me",
 ];
 
 // Cache proxied Telegram images for 24 h at the edge
@@ -30,9 +32,11 @@ export async function GET(req: Request) {
   try {
     const imgRes = await fetch(parsed.toString(), {
       headers: {
-        // Telegram CDN checks Referer for some assets
-        "Referer":    "https://t.me/",
-        "User-Agent": "Mozilla/5.0 (compatible; SGliving/1.0; +https://sgliving.life)",
+        "Referer":         "https://t.me/",
+        "User-Agent":      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept":          "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Origin":          "https://t.me",
       },
       signal: AbortSignal.timeout(8000),
     });

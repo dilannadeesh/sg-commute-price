@@ -50,19 +50,36 @@ function extractTelegramImage(chunk: string): string | undefined {
   let raw: string | undefined;
 
   // 1. data-zoom-src — full-size original photo (best quality)
-  const zoom = chunk.match(/data-zoom-src="([^"]+)"/);
-  if (zoom) raw = zoom[1];
-
-  // 2. Direct <img> inside the photo wrapper
   if (!raw) {
-    const inner = chunk.match(/tgme_widget_message_photo_inner_image[^>]*src="([^"]+)"/);
-    if (inner) raw = inner[1];
+    const m = chunk.match(/data-zoom-src="([^"]+)"/);
+    if (m) raw = m[1];
   }
 
-  // 3. CSS background-image thumbnail (always present for photo posts)
+  // 2. src on photo inner image — check both attribute orderings
   if (!raw) {
-    const bg = chunk.match(/background-image:url\('([^']+)'\)/);
-    if (bg) raw = bg[1];
+    const m = chunk.match(/tgme_widget_message_photo_inner_image[^>]*?\bsrc="([^"]+)"/);
+    if (m) raw = m[1];
+  }
+  if (!raw) {
+    const m = chunk.match(/\bsrc="([^"]+)"[^>]*?tgme_widget_message_photo_inner_image/);
+    if (m) raw = m[1];
+  }
+
+  // 3. CSS background-image — Telegram may encode quotes as &#39; or use double/no quotes
+  if (!raw) {
+    const decoded = chunk.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&");
+    const m = decoded.match(/background-image:\s*url\(\s*['"]?(https?:\/\/[^'")\s]+)['"]?\s*\)/);
+    if (m) raw = m[1];
+  }
+
+  // 4. Any Telegram CDN URL anywhere in the chunk as last resort
+  if (!raw) {
+    const m = chunk.match(/https?:\/\/cdn[^"'\s>)]*\.telegram-cdn\.org\/[^"'\s>)]+/);
+    if (m) raw = m[0];
+  }
+  if (!raw) {
+    const m = chunk.match(/https?:\/\/cdn[^"'\s>)]*\.cdn-telegram\.org\/[^"'\s>)]+/);
+    if (m) raw = m[0];
   }
 
   if (!raw) return undefined;
@@ -85,7 +102,11 @@ async function fetchFromPublicChannel(): Promise<Deal[]> {
 
   while (url && page < MAX_PAGES) {
     const res = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; SGliving/1.0; +https://sgliving.life)" },
+      headers: {
+        "User-Agent":      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+      },
       // Tag only the first fetch — revalidateTag("weekend") clears the whole route
       ...(page === 0 ? { next: { tags: ["weekend"], revalidate: 86400 } } : {}),
     });
