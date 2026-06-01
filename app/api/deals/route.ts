@@ -212,8 +212,10 @@ async function fetchFromPublicChannel(): Promise<Deal[]> {
     needsImage.forEach((d, i) => { if (images[i]) d.imageUrl = images[i]; });
   }
 
-  // Newest deals always on top
-  return allDeals.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  // Only return deals that have a real image — drops text-only posts
+  return allDeals
+    .filter(d => d.imageUrl)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
 // ── Mock data (shown only when scraping fails) ────────────────────────────────
