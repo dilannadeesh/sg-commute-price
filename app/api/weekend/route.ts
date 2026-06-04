@@ -66,9 +66,9 @@ function extractTelegramImage(chunk: string): string | undefined {
     if (bg) raw = bg[1];
   }
 
-  // 4. Any Telegram CDN URL in the chunk as last resort (covers both CDN domains)
+  // 4. Any Telegram CDN URL in the chunk as last resort (all known CDN domains)
   if (!raw) {
-    const cdn = chunk.match(/(?:https?:)?\/\/cdn[^"'\s>)]*\.(?:telegram-cdn|cdn-telegram)\.org\/[^"'\s>)]+/);
+    const cdn = chunk.match(/(?:https?:)?\/\/cdn[^"'\s>)]*\.(?:telegram-cdn\.org|cdn-telegram\.org|telesco\.pe)\/[^"'\s>)]+/);
     if (cdn) raw = cdn[0];
   }
 

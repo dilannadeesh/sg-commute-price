@@ -6,6 +6,7 @@ const ALLOWED_HOSTS = [
   ".telegram.org",
   ".telegramcdn.net",
   ".t.me",
+  ".telesco.pe",
 ];
 
 // Cache proxied Telegram images for 24 h at the edge
