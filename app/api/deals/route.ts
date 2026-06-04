@@ -49,41 +49,27 @@ function extractExternalUrls(html: string): string[] {
 function extractTelegramImage(chunk: string): string | undefined {
   let raw: string | undefined;
 
-  // 1. data-zoom-src on <img> tag — full-size photo
+  // 1. data-zoom-src — full-size original photo
+  const zoom = chunk.match(/data-zoom-src="([^"]+)"/);
+  if (zoom) raw = zoom[1];
+
+  // 2. src on photo inner image element
   if (!raw) {
-    const m = chunk.match(/data-zoom-src="([^"]+)"/);
-    if (m) raw = m[1];
+    const inner = chunk.match(/tgme_widget_message_photo_inner_image[^>]*src="([^"]+)"/);
+    if (inner) raw = inner[1];
   }
 
-  // 2. src on photo inner image — handle either attribute ordering
+  // 3. CSS background-image thumbnail (single or double quoted, handles &#39; entity)
   if (!raw) {
-    const m = chunk.match(/tgme_widget_message_photo_inner_image[^>]*?\bsrc="([^"]+)"/);
-    if (m) raw = m[1];
-  }
-  if (!raw) {
-    const m = chunk.match(/\bsrc="([^"]+)"[^>]*?tgme_widget_message_photo_inner_image/);
-    if (m) raw = m[1];
+    const decoded = chunk.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    const bg = decoded.match(/background-image:url\(['"]?(https?:\/\/[^'")\s]+)['"]?\)/);
+    if (bg) raw = bg[1];
   }
 
-  // 3. CSS background-image — most reliable for Telegram photo posts.
-  //    Decode &#39;/&quot; entities, accept single/double/bare quotes, accept //cdn... URLs.
+  // 4. Any Telegram CDN URL in the chunk as last resort
   if (!raw) {
-    const decoded = chunk
-      .replace(/&#39;/g, "'")
-      .replace(/&quot;/g, '"')
-      .replace(/&amp;/g, "&");
-    const m = decoded.match(
-      /background-image:\s*url\(\s*['"]?((?:https?:)?\/\/[^'")\s]+)['"]?\s*\)/
-    );
-    if (m) raw = m[1];
-  }
-
-  // 4. Any Telegram CDN URL in the chunk — absolute last resort
-  if (!raw) {
-    const m = chunk.match(
-      /(?:https?:)?\/\/cdn[^"'\s>)]*\.(?:telegram-cdn|cdn-telegram)\.org\/[^"'\s>)]+/
-    );
-    if (m) raw = m[0];
+    const cdn = chunk.match(/https?:\/\/cdn[^"'\s>)]*\.telegram-cdn\.org\/[^"'\s>)]+/);
+    if (cdn) raw = cdn[0];
   }
 
   if (!raw) return undefined;
@@ -137,9 +123,7 @@ async function fetchFromPublicChannel(): Promise<Deal[]> {
   while (url && page < MAX_PAGES) {
     const res = await fetch(url, {
       headers: {
-        "User-Agent":      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-        "Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5",
+        "User-Agent": "Mozilla/5.0 (compatible; SGliving/1.0; +https://sgliving.life)",
       },
       // Tag only the first fetch — revalidateTag("deals") invalidates the whole route
       ...(page === 0 ? { next: { tags: ["deals"], revalidate: 86400 } } : {}),
