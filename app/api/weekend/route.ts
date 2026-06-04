@@ -59,16 +59,16 @@ function extractTelegramImage(chunk: string): string | undefined {
     if (inner) raw = inner[1];
   }
 
-  // 3. CSS background-image thumbnail (single or double quoted, handles &#39; entity)
+  // 3. CSS background-image thumbnail — decode HTML entities, accept any quoting style
   if (!raw) {
-    const decoded = chunk.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-    const bg = decoded.match(/background-image:url\(['"]?(https?:\/\/[^'")\s]+)['"]?\)/);
+    const decoded = chunk.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&");
+    const bg = decoded.match(/background-image:\s*url\(\s*['"]?((?:https?:)?\/\/[^'")\s]+)['"]?\s*\)/);
     if (bg) raw = bg[1];
   }
 
-  // 4. Any Telegram CDN URL in the chunk as last resort
+  // 4. Any Telegram CDN URL in the chunk as last resort (covers both CDN domains)
   if (!raw) {
-    const cdn = chunk.match(/https?:\/\/cdn[^"'\s>)]*\.telegram-cdn\.org\/[^"'\s>)]+/);
+    const cdn = chunk.match(/(?:https?:)?\/\/cdn[^"'\s>)]*\.(?:telegram-cdn|cdn-telegram)\.org\/[^"'\s>)]+/);
     if (cdn) raw = cdn[0];
   }
 
