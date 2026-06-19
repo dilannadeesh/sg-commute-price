@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import type { Deal, ItinerarySlot, PlanResponse, TravelLeg } from "@/lib/types";
-import { SG_AREAS, TIME_BLOCKS, quoteAll } from "@/lib/quote";
+import type { Deal, ItinerarySlot, PlanResponse, TravelLegOptions, SingleLegQuote, FlexarLegQuote, GetGoLegQuote, QuoteResult } from "@/lib/types";
+import { SG_AREAS, TIME_BLOCKS, FLEXAR_STATIONS, quoteAll } from "@/lib/quote";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +27,6 @@ interface CuratedActivity {
   estimatedCostPerPax: number;
   keywords: string[];
   areaId: string;
-  /** 0=morning, 1=afternoon, 2=evening, -1=any */
   bestTimeOfDay: -1 | 0 | 1 | 2;
 }
 
@@ -43,11 +42,9 @@ interface CuratedFood {
 }
 
 const CURATED_ACTIVITIES: CuratedActivity[] = [
-  // East
   { title: "East Coast Park", excerpt: "Singapore's favourite beach park — rent a bicycle, enjoy BBQ pits, and stroll along the coast.", moreInfoUrl: "https://www.nparks.gov.sg/gardens-parks-and-nature/parks-and-nature-reserves/east-coast-park", tags: ["#outdoor", "#beach", "#family", "#cycling"], estimatedCostPerPax: 5, keywords: ["outdoor", "beach", "family", "cycling", "nature", "park"], areaId: "east-coast", bestTimeOfDay: 0 },
   { title: "Jewel Changi Airport", excerpt: "Home to the world's tallest indoor waterfall (HSBC Rain Vortex), indoor forest, and 280+ shops and restaurants.", moreInfoUrl: "https://www.jewelchangiairport.com/", tags: ["#indoor", "#family", "#kids", "#shopping"], estimatedCostPerPax: 15, keywords: ["indoor", "family", "kids", "shopping", "waterfall"], areaId: "changi", bestTimeOfDay: -1 },
   { title: "Katong Heritage Walk", excerpt: "Stroll through Singapore's vibrant Peranakan neighbourhood — colourful shophouses, heritage trails, and Katong laksa.", moreInfoUrl: "https://www.visitsingapore.com/walking-tour/katong-joo-chiat/", tags: ["#outdoor", "#culture", "#heritage"], estimatedCostPerPax: 0, keywords: ["outdoor", "heritage", "culture", "walking", "peranakan"], areaId: "katong", bestTimeOfDay: 0 },
-  // Central
   { title: "Gardens by the Bay (Outdoor Gardens)", excerpt: "Iconic Supertrees, serene landscapes, and water features — all outdoors and free to explore any time.", moreInfoUrl: "https://www.gardensbythebay.com.sg/", tags: ["#outdoor", "#family", "#nature", "#kids"], estimatedCostPerPax: 0, keywords: ["outdoor", "garden", "nature", "family", "kids", "supertree"], areaId: "marina", bestTimeOfDay: 2 },
   { title: "National Museum of Singapore", excerpt: "Journey through Singapore's story from ancient trading port to modern metropolis. Great for all ages.", moreInfoUrl: "https://www.nationalmuseum.sg/", tags: ["#museum", "#indoor", "#family", "#history"], estimatedCostPerPax: 15, keywords: ["museum", "indoor", "history", "culture", "heritage"], areaId: "bugis", bestTimeOfDay: 1 },
   { title: "ArtScience Museum", excerpt: "Where art meets science — immersive exhibitions inside the iconic lotus-shaped building at Marina Bay Sands.", moreInfoUrl: "https://www.marinabaysands.com/museum.html", tags: ["#museum", "#indoor", "#arts", "#family"], estimatedCostPerPax: 17, keywords: ["museum", "indoor", "art", "science", "culture", "exhibition"], areaId: "marina", bestTimeOfDay: 1 },
@@ -60,18 +57,14 @@ const CURATED_ACTIVITIES: CuratedActivity[] = [
   { title: "Tiong Bahru Neighbourhood", excerpt: "Explore Singapore's hippest neighbourhood — art deco architecture, indie bookshops, and artisan bakeries.", moreInfoUrl: "https://www.visitsingapore.com/walking-tour/tiong-bahru/", tags: ["#outdoor", "#arts", "#culture", "#food"], estimatedCostPerPax: 0, keywords: ["outdoor", "arts", "culture", "food", "neighbourhood", "cafe"], areaId: "tiong-bahru", bestTimeOfDay: 0 },
   { title: "Little India Heritage Walk", excerpt: "Immerse yourself in vibrant colours, spices, and temples on a self-guided walk through Little India.", moreInfoUrl: "https://www.visitsingapore.com/walking-tour/little-india/", tags: ["#outdoor", "#culture", "#heritage", "#family"], estimatedCostPerPax: 0, keywords: ["outdoor", "heritage", "culture", "walking", "india"], areaId: "novena", bestTimeOfDay: 0 },
   { title: "Sports Hub (Climbing & Aquatic Centre)", excerpt: "Singapore's mega sports complex — climbing walls, Olympic-size pools, and sports halls in one venue.", moreInfoUrl: "https://www.sgsportshub.com.sg/", tags: ["#sports", "#indoor", "#family"], estimatedCostPerPax: 12, keywords: ["sport", "swim", "climb", "gym", "fitness", "indoor"], areaId: "bugis", bestTimeOfDay: 1 },
-  // South
   { title: "Sentosa (Siloso & Palawan Beaches)", excerpt: "Singapore's go-to beach destination — free beach access with water sports and great food nearby.", moreInfoUrl: "https://www.sentosa.com.sg/en/things-to-do/beaches/", tags: ["#beach", "#outdoor", "#family", "#kids"], estimatedCostPerPax: 4, keywords: ["beach", "outdoor", "sentosa", "family", "kids", "swim"], areaId: "sentosa", bestTimeOfDay: 0 },
   { title: "Universal Studios Singapore", excerpt: "Southeast Asia's only Universal Studios — rides, shows, and beloved IP characters for all ages.", moreInfoUrl: "https://www.rwsentosa.com/en/attractions/universal-studios-singapore", tags: ["#indoor", "#family", "#kids", "#theme-park"], estimatedCostPerPax: 83, keywords: ["indoor", "family", "kids", "theme park", "rides"], areaId: "sentosa", bestTimeOfDay: -1 },
   { title: "S.E.A. Aquarium", excerpt: "One of the world's largest aquariums — over 100,000 marine animals across 50 different habitats.", moreInfoUrl: "https://www.rwsentosa.com/en/attractions/sea-aquarium", tags: ["#indoor", "#family", "#kids", "#nature"], estimatedCostPerPax: 42, keywords: ["indoor", "family", "kids", "aquarium", "nature", "marine"], areaId: "sentosa", bestTimeOfDay: 1 },
-  // North-East
   { title: "MacRitchie Reservoir Park", excerpt: "Walk the iconic HSBC TreeTop Walk suspension bridge and explore lush rainforest trails.", moreInfoUrl: "https://www.nparks.gov.sg/gardens-parks-and-nature/parks-and-nature-reserves/central-catchment-nature-reserve", tags: ["#outdoor", "#hiking", "#nature", "#family"], estimatedCostPerPax: 0, keywords: ["outdoor", "hiking", "nature", "trail", "treeto", "walk"], areaId: "bishan", bestTimeOfDay: 0 },
   { title: "Bishan–Ang Mo Kio Park", excerpt: "One of Singapore's largest parks with a restored river, inclusive playgrounds, and cycling paths.", moreInfoUrl: "https://www.nparks.gov.sg/gardens-parks-and-nature/parks-and-nature-reserves/bishan---ang-mo-kio-park", tags: ["#outdoor", "#family", "#kids", "#cycling"], estimatedCostPerPax: 0, keywords: ["outdoor", "family", "kids", "park", "cycling"], areaId: "ang-mo-kio", bestTimeOfDay: 0 },
   { title: "Punggol Waterway Park", excerpt: "Scenic 4.2 km waterway park — kayaking, cycling, and picnic spots along the water.", moreInfoUrl: "https://www.nparks.gov.sg/gardens-parks-and-nature/parks-and-nature-reserves/punggol-waterway-park", tags: ["#outdoor", "#family", "#kids", "#cycling"], estimatedCostPerPax: 0, keywords: ["outdoor", "family", "kids", "cycling", "kayak", "waterway"], areaId: "punggol", bestTimeOfDay: 0 },
-  // North
   { title: "Singapore Zoo", excerpt: "Award-winning open-concept zoo — hundreds of species in naturalistic habitats. Famous orang utan breakfast!", moreInfoUrl: "https://www.mandai.com/en/singapore-zoo.html", tags: ["#outdoor", "#nature", "#family", "#kids"], estimatedCostPerPax: 46, keywords: ["outdoor", "nature", "family", "kids", "wildlife", "zoo", "animals"], areaId: "yishun", bestTimeOfDay: 0 },
   { title: "Mandai Night Safari", excerpt: "The world's first nocturnal wildlife park — tram rides through 7 habitats with over 2,500 animals.", moreInfoUrl: "https://www.mandai.com/en/night-safari.html", tags: ["#outdoor", "#nature", "#family", "#kids"], estimatedCostPerPax: 55, keywords: ["outdoor", "nature", "family", "kids", "wildlife", "safari", "night"], areaId: "yishun", bestTimeOfDay: 2 },
-  // West
   { title: "Bukit Timah Nature Reserve", excerpt: "Summit Singapore's highest natural peak through primary rainforest — great wildlife sightings along the way.", moreInfoUrl: "https://www.nparks.gov.sg/gardens-parks-and-nature/parks-and-nature-reserves/bukit-timah-nature-reserve", tags: ["#outdoor", "#hiking", "#nature"], estimatedCostPerPax: 0, keywords: ["outdoor", "hiking", "nature", "trail", "summit", "bukit"], areaId: "bukit-timah", bestTimeOfDay: 0 },
 ];
 
@@ -84,15 +77,14 @@ const CURATED_FOOD_DB: CuratedFood[] = [
   { title: "Chinatown Complex Food Centre", excerpt: "Over 260 stalls serving authentic Chinese classics — one of Singapore's largest and most beloved hawker centres.", moreInfoUrl: "https://www.visitsingapore.com/see-do-singapore/places-to-see/chinatown-complex/", tags: ["#lunch", "#dinner", "#hawker", "#chinese"], estimatedCostPerPax: 8, cuisineTypes: ["chinese"], areaIds: ["chinatown"], mealTypes: ["breakfast", "lunch", "dinner"] },
   { title: "Old Airport Road Food Centre", excerpt: "Heritage hawker gem — famous for beef hor fun, hokkien mee, and char kway teow.", moreInfoUrl: "https://www.hungrygowhere.com/places/old-airport-road-food-centre", tags: ["#lunch", "#dinner", "#hawker", "#chinese"], estimatedCostPerPax: 7, cuisineTypes: ["chinese"], areaIds: ["katong", "bedok"], mealTypes: ["breakfast", "lunch", "dinner"] },
   { title: "Lau Pa Sat Festival Market", excerpt: "Iconic Victorian cast-iron hawker market in the CBD — famous for evening satay and wide variety of local cuisine.", moreInfoUrl: "https://www.laupasat.sg/", tags: ["#dinner", "#hawker", "#satay", "#chinese"], estimatedCostPerPax: 18, cuisineTypes: ["chinese", "malay"], areaIds: ["marina", "chinatown"], mealTypes: ["lunch", "dinner"] },
-  { title: "Newton Food Centre", excerpt: "Singapore's most famous open-air hawker centre — freshly grilled satay, BBQ seafood, and rojak from S$5.", moreInfoUrl: "https://www.visitsingapore.com/see-do-singapore/places-to-see/newton-food-centre/", tags: ["#dinner", "#hawker", "#local"], estimatedCostPerPax: 15, cuisineTypes: ["chinese", "malay"], areaIds: ["newton", "novena", "orchard"], mealTypes: ["dinner"] },
-  { title: "Swee Choon Dim Sum", excerpt: "One of Singapore's best dim sum spots — try the fluffy char siu bao and crispy spring rolls.", moreInfoUrl: "https://www.sweechoon.com/", tags: ["#dinner", "#breakfast", "#chinese", "#dim-sum"], estimatedCostPerPax: 22, cuisineTypes: ["chinese"], areaIds: ["novena", "bugis"], mealTypes: ["breakfast", "dinner"] },
+  { title: "Newton Food Centre", excerpt: "Singapore's most famous open-air hawker centre — freshly grilled satay, BBQ seafood, and rojak.", moreInfoUrl: "https://www.visitsingapore.com/see-do-singapore/places-to-see/newton-food-centre/", tags: ["#dinner", "#hawker", "#local"], estimatedCostPerPax: 15, cuisineTypes: ["chinese", "malay"], areaIds: ["newton", "novena", "orchard"], mealTypes: ["dinner"] },
+  { title: "Swee Choon Dim Sum", excerpt: "One of Singapore's best dim sum spots — try the fluffy char siu bao and crispy spring rolls.", moreInfoUrl: "https://www.sweechoon.com/", tags: ["#dinner", "#breakfast", "#chinese"], estimatedCostPerPax: 22, cuisineTypes: ["chinese"], areaIds: ["novena", "bugis"], mealTypes: ["breakfast", "dinner"] },
   { title: "Banana Leaf Apolo", excerpt: "Legendary banana leaf curry restaurant in Little India — fish head curry, biryani, and 40+ years of flavour.", moreInfoUrl: "https://www.thebananaleafapolo.com/", tags: ["#lunch", "#dinner", "#indian"], estimatedCostPerPax: 22, cuisineTypes: ["indian"], areaIds: ["novena"], mealTypes: ["lunch", "dinner"] },
-  { title: "Komala Vilas (Little India)", excerpt: "Vegetarian South Indian institution since 1947 — masala dosa, thali sets, and fresh coconut water.", moreInfoUrl: "https://komalavilas.com.sg/", tags: ["#breakfast", "#lunch", "#dinner", "#indian", "#vegetarian"], estimatedCostPerPax: 10, cuisineTypes: ["indian"], areaIds: ["novena"], mealTypes: ["breakfast", "lunch", "dinner"] },
-  { title: "Springleaf Prata Place", excerpt: "Freshly made roti prata at any hour — perfect with dhal and curry.", moreInfoUrl: "https://www.springleafprataplace.com/", tags: ["#breakfast", "#indian", "#prata"], estimatedCostPerPax: 8, cuisineTypes: ["indian"], areaIds: ["ang-mo-kio", "bishan", "novena"], mealTypes: ["breakfast", "brunch"] },
-  { title: "Hajjah Maimunah Restaurant", excerpt: "Beloved Malay heritage restaurant in Kampong Glam — nasi padang with over 40 dishes displayed daily.", moreInfoUrl: "https://www.hajjahmaimunah.com/", tags: ["#lunch", "#malay", "#nasi-padang"], estimatedCostPerPax: 14, cuisineTypes: ["malay"], areaIds: ["bugis"], mealTypes: ["breakfast", "lunch"] },
-  { title: "Geylang Serai Market", excerpt: "The heartland of Malay culture in Singapore — wet market and food centre with authentic Malay delights.", moreInfoUrl: "https://www.visitsingapore.com/see-do-singapore/places-to-see/geylang-serai-market/", tags: ["#breakfast", "#lunch", "#malay", "#hawker"], estimatedCostPerPax: 8, cuisineTypes: ["malay"], areaIds: ["bedok", "katong"], mealTypes: ["breakfast", "lunch"] },
-  { title: "Zam Zam Restaurant", excerpt: "Century-old Muslim eatery at Arab Street — famous for roti john, murtabak, and fragrant biryanis.", moreInfoUrl: "https://www.visitsingapore.com/dining-drinks-singapore/local-dishes/murtabak/", tags: ["#breakfast", "#lunch", "#dinner", "#malay", "#murtabak"], estimatedCostPerPax: 12, cuisineTypes: ["malay", "indian"], areaIds: ["bugis"], mealTypes: ["breakfast", "lunch", "dinner"] },
-  { title: "Newton Circus Satay", excerpt: "Singapore's most famous hawker centre for evening satay — pick your sticks, drink a Tiger, watch the grill.", moreInfoUrl: "https://www.visitsingapore.com/see-do-singapore/places-to-see/newton-food-centre/", tags: ["#dinner", "#malay", "#hawker", "#satay"], estimatedCostPerPax: 20, cuisineTypes: ["malay", "chinese"], areaIds: ["newton", "novena"], mealTypes: ["dinner"] },
+  { title: "Komala Vilas (Little India)", excerpt: "Vegetarian South Indian institution since 1947 — masala dosa, thali sets, and fresh coconut water.", moreInfoUrl: "https://komalavilas.com.sg/", tags: ["#breakfast", "#lunch", "#indian", "#vegetarian"], estimatedCostPerPax: 10, cuisineTypes: ["indian"], areaIds: ["novena"], mealTypes: ["breakfast", "lunch", "dinner"] },
+  { title: "Springleaf Prata Place", excerpt: "Freshly made roti prata at any hour — perfect with dhal and curry. Multiple locations across Singapore.", moreInfoUrl: "https://www.springleafprataplace.com/", tags: ["#breakfast", "#indian", "#prata"], estimatedCostPerPax: 8, cuisineTypes: ["indian"], areaIds: ["ang-mo-kio", "bishan", "novena"], mealTypes: ["breakfast", "brunch"] },
+  { title: "Hajjah Maimunah Restaurant", excerpt: "Beloved Malay heritage restaurant in Kampong Glam — nasi padang with over 40 dishes displayed daily.", moreInfoUrl: "https://www.hajjahmaimunah.com/", tags: ["#lunch", "#malay"], estimatedCostPerPax: 14, cuisineTypes: ["malay"], areaIds: ["bugis"], mealTypes: ["breakfast", "lunch"] },
+  { title: "Geylang Serai Market", excerpt: "The heartland of Malay culture in Singapore — authentic Malay delights and heritage food stalls.", moreInfoUrl: "https://www.visitsingapore.com/see-do-singapore/places-to-see/geylang-serai-market/", tags: ["#breakfast", "#lunch", "#malay", "#hawker"], estimatedCostPerPax: 8, cuisineTypes: ["malay"], areaIds: ["bedok", "katong"], mealTypes: ["breakfast", "lunch"] },
+  { title: "Zam Zam Restaurant", excerpt: "Century-old Muslim eatery at Arab Street — famous for roti john, murtabak, and fragrant biryanis.", moreInfoUrl: "https://www.visitsingapore.com/dining-drinks-singapore/local-dishes/murtabak/", tags: ["#breakfast", "#lunch", "#dinner", "#malay"], estimatedCostPerPax: 12, cuisineTypes: ["malay", "indian"], areaIds: ["bugis"], mealTypes: ["breakfast", "lunch", "dinner"] },
   { title: "Traditional Kopitiam Breakfast", excerpt: "Start your Singapore morning right — kaya toast, soft-boiled eggs, and kopi at any neighbourhood kopitiam from S$5.", moreInfoUrl: "https://www.visitsingapore.com/dining-drinks-singapore/local-dishes/kaya-toast/", tags: ["#breakfast", "#local", "#hawker"], estimatedCostPerPax: 6, cuisineTypes: ["chinese", "malay"], areaIds: ["orchard", "bugis", "chinatown", "novena", "ang-mo-kio", "tampines", "bedok"], mealTypes: ["breakfast"] },
   { title: "Café Brunch", excerpt: "Singapore's café scene is thriving — Tiong Bahru, Tanjong Pagar, and Dempsey Hill offer excellent brunch from S$18.", moreInfoUrl: "https://www.hungrygowhere.com/", tags: ["#brunch", "#cafe", "#western"], estimatedCostPerPax: 22, cuisineTypes: ["western"], areaIds: ["tiong-bahru", "outram", "orchard", "bugis"], mealTypes: ["brunch"] },
 ];
@@ -100,36 +92,35 @@ const CURATED_FOOD_DB: CuratedFood[] = [
 // ── Keyword maps ──────────────────────────────────────────────────────────────
 
 const CUISINE_KEYWORDS: Record<string, string[]> = {
-  western: ["western", "burger", "pasta", "pizza", "steak", "cafe", "sandwich", "salad", "brunch", "bagel", "croissant", "italian", "french"],
-  chinese: ["chinese", "dim sum", "bak kut", "char siu", "roast", "dumpling", "wonton", "claypot", "noodle", "porridge", "congee", "hor fun", "kway teow", "hawker"],
-  indian:  ["indian", "naan", "curry", "briyani", "biryani", "tandoor", "roti", "prata", "thali", "masala", "dosa", "banana leaf"],
-  malay:   ["malay", "nasi", "rendang", "satay", "laksa", "mee", "ayam", "ikan", "murtabak", "kampung", "nasi padang", "nasi lemak", "keropok"],
+  western: ["western", "burger", "pasta", "pizza", "steak", "cafe", "sandwich", "salad", "brunch", "bagel", "croissant"],
+  chinese: ["chinese", "dim sum", "bak kut", "char siu", "roast", "dumpling", "wonton", "claypot", "noodle", "porridge", "hor fun", "kway teow"],
+  indian:  ["indian", "naan", "curry", "briyani", "biryani", "tandoor", "roti", "prata", "thali", "masala", "dosa"],
+  malay:   ["malay", "nasi", "rendang", "satay", "laksa", "ayam", "ikan", "murtabak", "nasi padang", "nasi lemak"],
 };
 
 const MEAL_KEYWORDS: Record<string, string[]> = {
-  breakfast: ["breakfast", "morning", "kopi", "kaya", "toast", "egg", "granola", "oat", "brunch"],
-  brunch:    ["brunch", "brunch menu"],
-  lunch:     ["lunch", "noon", "midday", "lunchtime", "set lunch"],
-  dinner:    ["dinner", "supper", "evening", "night", "dinner set"],
+  breakfast: ["breakfast", "morning", "kopi", "kaya", "toast", "egg", "granola", "oat"],
+  brunch:    ["brunch"],
+  lunch:     ["lunch", "noon", "midday", "lunchtime"],
+  dinner:    ["dinner", "supper", "evening", "night"],
 };
 
 const ACTIVITY_KEYWORDS: Record<string, string[]> = {
   outdoor:  ["outdoor", "garden", "park", "nature", "reservoir", "green", "walk", "trail", "alfresco"],
-  indoor:   ["indoor", "escape", "studio", "workshop", "mall", "shopping", "centre"],
-  museum:   ["museum", "gallery", "heritage", "history", "science", "exhibit", "art"],
+  indoor:   ["indoor", "escape", "studio", "workshop", "mall", "shopping"],
+  museum:   ["museum", "gallery", "heritage", "history", "science", "exhibit"],
   beach:    ["beach", "sentosa", "coastal", "sea", "wave", "shore", "swim"],
   sports:   ["sport", "swim", "tennis", "badminton", "golf", "gym", "fitness", "run", "climb", "kayak"],
-  arts:     ["concert", "theatre", "theater", "performance", "dance", "music", "show", "opera", "festival"],
-  hiking:   ["hike", "hiking", "trail", "treeto", "reservoir", "bukit", "summit", "trek"],
+  arts:     ["concert", "theatre", "theater", "performance", "dance", "music", "show", "opera"],
+  hiking:   ["hike", "hiking", "trail", "treeto", "reservoir", "bukit", "summit"],
   family:   ["family", "kids", "children", "child", "toddler", "playground"],
 };
 
 const MEAL_NATURAL_H: Record<string, number> = { breakfast: 8.5, brunch: 10.5, lunch: 12.0, dinner: 18.5 };
-const MEAL_DUR:       Record<string, number> = { breakfast: 1.0, brunch:  1.5, lunch:  1.0, dinner:  1.5 };
+const MEAL_DUR:       Record<string, number> = { breakfast: 1.0, brunch: 1.5, lunch: 1.0, dinner: 1.5 };
 const MEAL_DEFAULT_COST: Record<string, number> = { breakfast: 10, brunch: 22, lunch: 18, dinner: 38 };
-const ACTIVITY_DUR = 1.5;
+const ACTIVITY_DUR  = 1.5;
 const TRAVEL_BUFFER = 0.25;
-
 const ACTIVITY_TAG_COST: [string, number][] = [
   ["#beach", 4], ["#outdoor", 5], ["#hiking", 5],
   ["#museum", 15], ["#sports", 20], ["#arts", 40], ["#indoor", 25],
@@ -150,8 +141,7 @@ function formatTime(decH: number): string {
 
 function extractFirstPrice(text: string): number | null {
   const prices = [...text.matchAll(/\$(\d+(?:\.\d{1,2})?)/g)]
-    .map(m => parseFloat(m[1]))
-    .filter(p => p > 0 && p < 500);
+    .map(m => parseFloat(m[1])).filter(p => p > 0 && p < 500);
   return prices.length > 0 ? Math.min(...prices) : null;
 }
 
@@ -176,44 +166,83 @@ function getTimeBlockForH(h: number) {
   return TIME_BLOCKS[5];
 }
 
-/** Classify hour: 0=morning (<11), 1=afternoon (11-17), 2=evening (>=17) */
 function timeOfDay(h: number): 0 | 1 | 2 {
-  if (h < 11) return 0;
-  if (h < 17) return 1;
-  return 2;
+  return h < 11 ? 0 : h < 17 ? 1 : 2;
 }
 
 function getAreaRegion(areaId: string): string | null {
   return SG_AREAS.find(a => a.id === areaId)?.region ?? null;
 }
 
-/** Pick the area in food.areaIds closest to nearAreaId */
 function pickFoodArea(food: CuratedFood, nearAreaId: string | null): string {
   if (!nearAreaId) return food.areaIds[0];
   if (food.areaIds.includes(nearAreaId)) return nearAreaId;
   const nearRegion = getAreaRegion(nearAreaId);
-  const sameRegion = food.areaIds.find(id => getAreaRegion(id) === nearRegion);
-  return sameRegion ?? food.areaIds[0];
+  return food.areaIds.find(id => getAreaRegion(id) === nearRegion) ?? food.areaIds[0];
 }
 
-/** Compute best travel leg between two SG_AREAS using quoteAll */
-function computeTravelLeg(fromId: string, toId: string, atHour: number): TravelLeg | null {
-  if (fromId === toId) return null;
-  const from = SG_AREAS.find(a => a.id === fromId);
-  const to   = SG_AREAS.find(a => a.id === toId);
+function toSingleLeg(q: QuoteResult, perPax: boolean): SingleLegQuote {
+  return {
+    platformName: q.platform.name,
+    platformId:   q.platformId,
+    minutes:      Math.round(q.minutes),
+    price:        Math.round(q.price * 100) / 100,
+    surgeLabel:   q.surgeLabel,
+    perPax,
+  };
+}
+
+/** Compute all 4 transport options for a single leg. */
+function computeLegOptions(
+  fromAreaId: string,
+  toAreaId: string,
+  atHour: number,
+  dayDurationHours: number,
+): TravelLegOptions | null {
+  if (fromAreaId === toAreaId) return null;
+  const from = SG_AREAS.find(a => a.id === fromAreaId);
+  const to   = SG_AREAS.find(a => a.id === toAreaId);
   if (!from || !to) return null;
 
-  const quotes   = quoteAll(from, to, getTimeBlockForH(atHour));
-  const available = quotes.filter(q => !q.unavailable);
-  const best     = available.find(q => q.isCheapest) ?? available[0];
+  const timeBlock = getTimeBlockForH(atHour);
+  const quotes    = quoteAll(from, to, timeBlock, {
+    getgoStopoverHours: dayDurationHours,
+    flexarStations: FLEXAR_STATIONS,
+  });
+  const avail = quotes.filter(q => !q.unavailable);
+
+  const ptQ     = avail.find(q => q.platformId === "publictransport");
+  // Cheapest hail-type platform (Grab, TADA, Gojek)
+  const taxiQ   = avail
+    .filter(q => q.platform.kind === "hail")
+    .sort((a, b) => a.price - b.price)[0];
+  const flexarQ = avail.find(q => q.platformId === "flexar");
+  const getgoQ  = avail.find(q => q.platformId === "getgo");
+
+  // Flexar: only include if stations are within 15-min walk at both ends
+  const flexarOk = !!(
+    flexarQ?.flexar &&
+    flexarQ.flexar.walkInMin <= 15 &&
+    flexarQ.flexar.walkOutMin <= 15
+  );
+
+  const flexarLeg: FlexarLegQuote | null = flexarOk && flexarQ
+    ? { ...toSingleLeg(flexarQ, false), walkInMin: flexarQ.flexar!.walkInMin, walkOutMin: flexarQ.flexar!.walkOutMin }
+    : null;
+
+  const getgoLeg: GetGoLegQuote | null = getgoQ?.getgo
+    ? { ...toSingleLeg(getgoQ, false), stopoverHours: getgoQ.getgo.stopoverHours }
+    : null;
 
   return {
-    fromName:     from.name,
-    toName:       to.name,
-    platformName: best?.platform.name ?? "MRT/Bus",
-    minutes:      best ? Math.round(best.minutes) : 20,
-    price:        best ? Math.round(best.price * 100) / 100 : 1.28,
-    surgeLabel:   best?.surgeLabel ?? null,
+    fromName: from.name,
+    toName:   to.name,
+    fromAreaId,
+    toAreaId,
+    publictransport: ptQ  ? toSingleLeg(ptQ, true)   : null,
+    taxi:            taxiQ ? toSingleLeg(taxiQ, false) : null,
+    flexar:          flexarLeg,
+    getgo:           getgoLeg,
   };
 }
 
@@ -223,20 +252,13 @@ function scoreFood(deal: Deal, mealType: string, foodTypes: string[]): number {
   let score = 0;
   const lower = deal.text.toLowerCase();
   const tags  = deal.tags.map(t => t.toLowerCase());
-
-  for (const kw of MEAL_KEYWORDS[mealType] ?? []) {
-    if (lower.includes(kw)) { score += 10; break; }
-  }
+  for (const kw of MEAL_KEYWORDS[mealType] ?? []) { if (lower.includes(kw)) { score += 10; break; } }
   if (tags.includes(`#${mealType}`)) score += 8;
   if (extractFirstPrice(deal.text) !== null) score += 4;
   if (extractDealBadge(deal.text)) score += 6;
-
   for (const ft of foodTypes) {
-    for (const kw of CUISINE_KEYWORDS[ft] ?? []) {
-      if (lower.includes(kw)) { score += 8; break; }
-    }
+    for (const kw of CUISINE_KEYWORDS[ft] ?? []) { if (lower.includes(kw)) { score += 8; break; } }
   }
-
   const daysOld = (Date.now() - new Date(deal.date).getTime()) / 86_400_000;
   if (daysOld < 7) score += 5; else if (daysOld < 30) score += 2;
   if (deal.imageUrl) score += 2;
@@ -247,19 +269,10 @@ function scoreActivity(deal: Deal, requested: string[], hasKids: boolean, hasYou
   let score = 0;
   const lower = deal.text.toLowerCase();
   const tags  = deal.tags.map(t => t.toLowerCase());
-
-  if (requested.length === 0) {
-    score += 5;
-  } else {
-    for (const act of requested) {
-      const kws    = ACTIVITY_KEYWORDS[act] ?? [];
-      if (tags.includes(`#${act}`) || kws.some(kw => lower.includes(kw))) score += 15;
-    }
-  }
-
+  if (requested.length === 0) { score += 5; }
+  else { for (const act of requested) { if (tags.includes(`#${act}`) || (ACTIVITY_KEYWORDS[act] ?? []).some(kw => lower.includes(kw))) score += 15; } }
   if (hasKids && (tags.includes("#family") || tags.includes("#kids") || lower.includes("family") || lower.includes("kids"))) score += 10;
   if (hasYoungKids && ["climbing", "treeto", "obstacle", "bouldering"].some(u => lower.includes(u))) score -= 8;
-
   const daysOld = (Date.now() - new Date(deal.date).getTime()) / 86_400_000;
   if (daysOld < 7) score += 5; else if (daysOld < 30) score += 2;
   if (deal.imageUrl) score += 2;
@@ -269,56 +282,25 @@ function scoreActivity(deal: Deal, requested: string[], hasKids: boolean, hasYou
 function scoreCuratedFood(food: CuratedFood, mealType: string, foodTypes: string[], nearAreaId: string | null): number {
   let score = 0;
   if (food.mealTypes.includes(mealType)) score += 20;
-
-  if (foodTypes.length > 0) {
-    for (const ft of foodTypes) { if (food.cuisineTypes.includes(ft)) score += 15; }
-  } else { score += 5; }
-
-  // Area proximity — food near where you currently are
+  if (foodTypes.length > 0) { for (const ft of foodTypes) { if (food.cuisineTypes.includes(ft)) score += 15; } }
+  else { score += 5; }
   if (nearAreaId) {
     if (food.areaIds.includes(nearAreaId)) score += 20;
     else if (food.areaIds.some(id => getAreaRegion(id) === getAreaRegion(nearAreaId))) score += 8;
   }
-
   return score;
 }
 
-function scoreCuratedActivity(
-  ca: CuratedActivity,
-  requested: string[],
-  hasKids: boolean,
-  hasYoungKids: boolean,
-  lastAreaId: string | null,
-  slotH: number,
-): number {
+function scoreCuratedActivity(ca: CuratedActivity, requested: string[], hasKids: boolean, hasYoungKids: boolean, lastAreaId: string | null, slotH: number): number {
   let score = 0;
-
-  // Activity type match
-  if (requested.length === 0) {
-    score += 5;
-  } else {
-    for (const act of requested) {
-      const kws = ACTIVITY_KEYWORDS[act] ?? [];
-      if (ca.tags.includes(`#${act}`) || ca.keywords.some(k => kws.includes(k) || k === act)) score += 15;
-    }
-  }
-
-  // Kids suitability
+  if (requested.length === 0) { score += 5; }
+  else { for (const act of requested) { const kws = ACTIVITY_KEYWORDS[act] ?? []; if (ca.tags.includes(`#${act}`) || ca.keywords.some(k => kws.includes(k) || k === act)) score += 15; } }
   if (hasKids && (ca.tags.includes("#family") || ca.tags.includes("#kids"))) score += 10;
   if (hasYoungKids && ["climbing", "treeto", "obstacle", "bouldering", "hiking"].some(u => ca.keywords.includes(u))) score -= 10;
-
-  // Area clustering — prefer activities near where we already are (reduce travel)
-  if (lastAreaId) {
-    if (ca.areaId === lastAreaId) score += 20;
-    else if (getAreaRegion(ca.areaId) === getAreaRegion(lastAreaId)) score += 8;
-  }
-
-  // Time-of-day suitability
+  if (lastAreaId) { if (ca.areaId === lastAreaId) score += 20; else if (getAreaRegion(ca.areaId) === getAreaRegion(lastAreaId)) score += 8; }
   const tod = timeOfDay(slotH);
   if (ca.bestTimeOfDay !== -1 && ca.bestTimeOfDay === tod) score += 8;
-  // Penalise indoor activities in morning, outdoor in scorching midday
   if (tod === 1 && ca.tags.includes("#outdoor") && !ca.tags.includes("#beach")) score -= 4;
-
   return score;
 }
 
@@ -334,7 +316,7 @@ function estimateCostPerPax(item: Deal | CuratedActivity | CuratedFood, type: "m
   return 20;
 }
 
-// ── Slot sequence generator ───────────────────────────────────────────────────
+// ── Slot sequence ─────────────────────────────────────────────────────────────
 
 interface SlotSpec { type: "meal" | "activity"; mealType?: string; targetH: number; }
 
@@ -342,11 +324,9 @@ function generateSlotSequence(startH: number, durationH: number, meals: string[]
   const endH = startH + durationH;
   const specs: SlotSpec[] = [];
   let cursor = startH;
-
   const orderedMeals = ["breakfast", "brunch", "lunch", "dinner"].filter(m => meals.includes(m));
   const scheduled: Array<{ h: number; mealType: string; dur: number }> = [];
   let lastMealEnd = -Infinity;
-
   for (const meal of orderedMeals) {
     const natural  = MEAL_NATURAL_H[meal] ?? startH;
     const earliest = Math.max(startH, natural, lastMealEnd + 2);
@@ -355,21 +335,12 @@ function generateSlotSequence(startH: number, durationH: number, meals: string[]
     scheduled.push({ h: earliest, mealType: meal, dur });
     lastMealEnd = earliest + dur;
   }
-
   for (const ms of scheduled) {
-    while (cursor + ACTIVITY_DUR <= ms.h - TRAVEL_BUFFER) {
-      specs.push({ type: "activity", targetH: cursor });
-      cursor += ACTIVITY_DUR + TRAVEL_BUFFER;
-    }
+    while (cursor + ACTIVITY_DUR <= ms.h - TRAVEL_BUFFER) { specs.push({ type: "activity", targetH: cursor }); cursor += ACTIVITY_DUR + TRAVEL_BUFFER; }
     specs.push({ type: "meal", mealType: ms.mealType, targetH: ms.h });
     cursor = ms.h + ms.dur + TRAVEL_BUFFER;
   }
-
-  while (cursor + ACTIVITY_DUR <= endH) {
-    specs.push({ type: "activity", targetH: cursor });
-    cursor += ACTIVITY_DUR + TRAVEL_BUFFER;
-  }
-
+  while (cursor + ACTIVITY_DUR <= endH) { specs.push({ type: "activity", targetH: cursor }); cursor += ACTIVITY_DUR + TRAVEL_BUFFER; }
   return specs;
 }
 
@@ -387,13 +358,9 @@ function buildItinerary(req: PlanRequest, foodDeals: Deal[], weekendDeals: Deal[
   const usedActDealIds  = new Set<number>();
   const usedCuratedFood = new Set<string>();
   const usedCuratedAct  = new Set<string>();
+  const LIVE_BONUS      = 15;
 
-  const LIVE_BONUS = 15;
-
-  // Build itinerary content with area tracking
-  // We run two passes:
-  //   Pass 1: assign content and areas
-  //   Pass 2: compute travel legs and adjust times
+  // Pass 1: pick content for each slot, track areas
   interface Draft { spec: SlotSpec; areaId: string | null; content: ItinerarySlot; }
   const drafts: Draft[] = [];
   let lastAreaId: string | null = startAreaId || null;
@@ -401,21 +368,13 @@ function buildItinerary(req: PlanRequest, foodDeals: Deal[], weekendDeals: Deal[
   for (const spec of specs) {
     if (spec.type === "meal") {
       const mealType = spec.mealType!;
-
-      const dealCands = foodDeals
-        .filter(d => !usedFoodDealIds.has(d.id))
-        .map(d => ({ kind: "deal" as const, d, score: scoreFood(d, mealType, foodTypes) + LIVE_BONUS }));
-
-      const curatedCands = CURATED_FOOD_DB
-        .filter(f => !usedCuratedFood.has(f.title))
-        .map(f => ({ kind: "curated" as const, f, score: scoreCuratedFood(f, mealType, foodTypes, lastAreaId) }));
-
+      const dealCands = foodDeals.filter(d => !usedFoodDealIds.has(d.id)).map(d => ({ kind: "deal" as const, d, score: scoreFood(d, mealType, foodTypes) + LIVE_BONUS }));
+      const curatedCands = CURATED_FOOD_DB.filter(f => !usedCuratedFood.has(f.title)).map(f => ({ kind: "curated" as const, f, score: scoreCuratedFood(f, mealType, foodTypes, lastAreaId) }));
       const best = [...dealCands, ...curatedCands].sort((a, b) => b.score - a.score)[0];
       if (!best) continue;
 
       let areaId: string | null = null;
       let slot: ItinerarySlot;
-
       if (best.kind === "deal") {
         usedFoodDealIds.add(best.d.id);
         const cpp = estimateCostPerPax(best.d, "meal", mealType);
@@ -426,25 +385,17 @@ function buildItinerary(req: PlanRequest, foodDeals: Deal[], weekendDeals: Deal[
         const cpp = best.f.estimatedCostPerPax;
         slot = { time: formatTime(spec.targetH), type: "meal", mealType, title: best.f.title, excerpt: best.f.excerpt, estimatedCostPerPax: cpp, totalCost: cpp * pax, moreInfoUrl: best.f.moreInfoUrl, tags: best.f.tags, isRealDeal: false, areaId: areaId ?? undefined, areaName: SG_AREAS.find(a => a.id === areaId)?.name };
       }
-
       if (areaId) lastAreaId = areaId;
       drafts.push({ spec, areaId, content: slot });
 
     } else {
-      const dealCands = weekendDeals
-        .filter(d => !usedActDealIds.has(d.id))
-        .map(d => ({ kind: "deal" as const, d, score: scoreActivity(d, activities, hasKids, hasYoungKids) + LIVE_BONUS }));
-
-      const curatedCands = CURATED_ACTIVITIES
-        .filter(ca => !usedCuratedAct.has(ca.title))
-        .map(ca => ({ kind: "curated" as const, ca, score: scoreCuratedActivity(ca, activities, hasKids, hasYoungKids, lastAreaId, spec.targetH) }));
-
+      const dealCands = weekendDeals.filter(d => !usedActDealIds.has(d.id)).map(d => ({ kind: "deal" as const, d, score: scoreActivity(d, activities, hasKids, hasYoungKids) + LIVE_BONUS }));
+      const curatedCands = CURATED_ACTIVITIES.filter(ca => !usedCuratedAct.has(ca.title)).map(ca => ({ kind: "curated" as const, ca, score: scoreCuratedActivity(ca, activities, hasKids, hasYoungKids, lastAreaId, spec.targetH) }));
       const best = [...dealCands, ...curatedCands].sort((a, b) => b.score - a.score)[0];
       if (!best) continue;
 
       let areaId: string | null = null;
       let slot: ItinerarySlot;
-
       if (best.kind === "deal") {
         usedActDealIds.add(best.d.id);
         const cpp = estimateCostPerPax(best.d, "activity");
@@ -453,51 +404,43 @@ function buildItinerary(req: PlanRequest, foodDeals: Deal[], weekendDeals: Deal[
         usedCuratedAct.add(best.ca.title);
         areaId = best.ca.areaId;
         const cpp = best.ca.estimatedCostPerPax;
-        slot = { time: formatTime(spec.targetH), type: "activity", title: best.ca.title, excerpt: best.ca.excerpt, estimatedCostPerPax: cpp, totalCost: cpp * pax, moreInfoUrl: best.ca.moreInfoUrl, tags: best.ca.tags, isRealDeal: false, areaId: areaId, areaName: SG_AREAS.find(a => a.id === areaId)?.name };
+        slot = { time: formatTime(spec.targetH), type: "activity", title: best.ca.title, excerpt: best.ca.excerpt, estimatedCostPerPax: cpp, totalCost: cpp * pax, moreInfoUrl: best.ca.moreInfoUrl, tags: best.ca.tags, isRealDeal: false, areaId, areaName: SG_AREAS.find(a => a.id === areaId)?.name };
       }
-
       if (areaId) lastAreaId = areaId;
       drafts.push({ spec, areaId, content: slot });
     }
   }
 
-  // Pass 2: compute travel legs, adjust times, build final itinerary
+  // Pass 2: compute travel options and adjust times
   const itinerary: ItinerarySlot[] = [];
   let cursor = startH;
-  let totalTravelCost = 0;
 
-  // Departure travel: from startArea to first slot's area
-  let departureTravel: TravelLeg | undefined;
+  let departureOptions: TravelLegOptions | undefined;
   const firstDraft = drafts[0];
   if (startAreaId && firstDraft?.areaId && startAreaId !== firstDraft.areaId) {
-    const leg = computeTravelLeg(startAreaId, firstDraft.areaId, startH);
-    if (leg) {
-      departureTravel = leg;
-      cursor += leg.minutes / 60;
-      totalTravelCost += leg.price;
+    const opts = computeLegOptions(startAreaId, firstDraft.areaId, startH, durationHours);
+    if (opts) {
+      departureOptions = opts;
+      // Adjust cursor by cheapest option's travel time (PT as default baseline)
+      const baseMin = opts.publictransport?.minutes ?? opts.taxi?.minutes ?? 20;
+      cursor += baseMin / 60;
     }
   }
 
   for (let i = 0; i < drafts.length; i++) {
     const { spec, areaId, content } = drafts[i];
-
-    // For meals, respect natural meal time (not earlier, possibly later)
-    const slotH = spec.type === "meal"
-      ? Math.max(cursor, spec.targetH)
-      : cursor;
-
+    const slotH = spec.type === "meal" ? Math.max(cursor, spec.targetH) : cursor;
     const slot: ItinerarySlot = { ...content, time: formatTime(slotH) };
 
-    // Compute travel to NEXT slot
+    // Compute travel to NEXT slot (if areas differ)
     const next = drafts[i + 1];
     if (next?.areaId && areaId && areaId !== next.areaId) {
       const slotDur = spec.type === "meal" ? (MEAL_DUR[spec.mealType ?? "lunch"] ?? 1) : ACTIVITY_DUR;
-      const legDepartH = slotH + slotDur;
-      const leg = computeTravelLeg(areaId, next.areaId, Math.floor(legDepartH));
-      if (leg) {
-        slot.travelAfter = leg;
-        totalTravelCost += leg.price;
-        cursor = slotH + slotDur + leg.minutes / 60 + TRAVEL_BUFFER;
+      const opts = computeLegOptions(areaId, next.areaId, Math.floor(slotH + slotDur), durationHours);
+      if (opts) {
+        slot.travelAfterOptions = opts;
+        const baseMin = opts.publictransport?.minutes ?? opts.taxi?.minutes ?? 15;
+        cursor = slotH + slotDur + baseMin / 60 + TRAVEL_BUFFER;
       } else {
         cursor = slotH + (spec.type === "meal" ? (MEAL_DUR[spec.mealType ?? "lunch"] ?? 1) : ACTIVITY_DUR) + TRAVEL_BUFFER;
       }
@@ -508,29 +451,24 @@ function buildItinerary(req: PlanRequest, foodDeals: Deal[], weekendDeals: Deal[
     itinerary.push(slot);
   }
 
-  // Return travel: from last slot's area back to startArea
-  let returnTravel: TravelLeg | undefined;
+  // Return travel options
+  let returnOptions: TravelLegOptions | undefined;
   const lastDraft = drafts[drafts.length - 1];
   if (startAreaId && lastDraft?.areaId && startAreaId !== lastDraft.areaId) {
-    const leg = computeTravelLeg(lastDraft.areaId, startAreaId, Math.floor(cursor));
-    if (leg) {
-      returnTravel = leg;
-      totalTravelCost += leg.price;
-    }
+    const opts = computeLegOptions(lastDraft.areaId, startAreaId, Math.floor(cursor), durationHours);
+    if (opts) returnOptions = opts;
   }
 
-  const activityCostMin = itinerary.reduce((s, i) => s + i.estimatedCostPerPax, 0) * pax;
-  const totalCostMin    = activityCostMin + Math.round(totalTravelCost);
-  const totalCostMax    = Math.round(totalCostMin * 1.3);
-  const startArea       = SG_AREAS.find(a => a.id === startAreaId);
+  const totalFoodCost       = itinerary.filter(s => s.type === "meal").reduce((s, i) => s + i.totalCost, 0);
+  const totalActivitiesCost = itinerary.filter(s => s.type === "activity").reduce((s, i) => s + i.totalCost, 0);
+  const startArea           = SG_AREAS.find(a => a.id === startAreaId);
 
   return {
     itinerary,
-    departureTravel,
-    returnTravel,
-    totalCostMin,
-    totalCostMax,
-    totalTravelCost: Math.round(totalTravelCost * 100) / 100,
+    departureOptions,
+    returnOptions,
+    totalFoodCost,
+    totalActivitiesCost,
     pax,
     generatedAt: new Date().toISOString(),
     startAreaName: startArea?.name,
@@ -545,16 +483,13 @@ export async function POST(req: Request) {
     if (!body.startTime || !body.durationHours) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
-
     const origin = new URL(req.url).origin;
     const [dealsRes, weekendRes] = await Promise.all([
       fetch(`${origin}/api/deals`,   { cache: "no-store" }),
       fetch(`${origin}/api/weekend`, { cache: "no-store" }),
     ]);
-
     const foodDeals:    Deal[] = dealsRes.ok  ? ((await dealsRes.json()).deals   ?? []) : [];
     const weekendDeals: Deal[] = weekendRes.ok ? ((await weekendRes.json()).deals ?? []) : [];
-
     return NextResponse.json(buildItinerary(body, foodDeals, weekendDeals));
   } catch (err) {
     console.error("[/api/plan]", err);

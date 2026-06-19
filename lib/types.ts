@@ -111,14 +111,43 @@ export interface Deal {
   imageUrl?: string;
 }
 
-export interface TravelLeg {
-  fromName: string;
-  toName: string;
+// ── Transport types ───────────────────────────────────────────────────────────
+
+export interface SingleLegQuote {
   platformName: string;
+  platformId: string;
   minutes: number;
+  /** Flat price for the vehicle (not per-person for hail/share) */
   price: number;
   surgeLabel: string | null;
+  /** True only for public transport (price multiplied by pax count) */
+  perPax: boolean;
 }
+
+export interface FlexarLegQuote extends SingleLegQuote {
+  walkInMin: number;
+  walkOutMin: number;
+}
+
+export interface GetGoLegQuote extends SingleLegQuote {
+  stopoverHours: number;
+}
+
+export interface TravelLegOptions {
+  fromName: string;
+  toName: string;
+  fromAreaId: string;
+  toAreaId: string;
+  publictransport: SingleLegQuote | null;
+  taxi: SingleLegQuote | null;           // cheapest hail platform
+  flexar: FlexarLegQuote | null;         // null if no station within 15-min walk
+  getgo: GetGoLegQuote | null;
+}
+
+export type FirstLegMode = "publictransport" | "taxi" | "flexar" | "getgo";
+export type LegMode = "publictransport" | "taxi";
+
+// ── Itinerary types ───────────────────────────────────────────────────────────
 
 export interface ItinerarySlot {
   time: string;
@@ -136,16 +165,15 @@ export interface ItinerarySlot {
   dealBadge?: string;
   areaId?: string;
   areaName?: string;
-  travelAfter?: TravelLeg;
+  travelAfterOptions?: TravelLegOptions;
 }
 
 export interface PlanResponse {
   itinerary: ItinerarySlot[];
-  departureTravel?: TravelLeg;
-  returnTravel?: TravelLeg;
-  totalCostMin: number;
-  totalCostMax: number;
-  totalTravelCost: number;
+  departureOptions?: TravelLegOptions;
+  returnOptions?: TravelLegOptions;
+  totalActivitiesCost: number;
+  totalFoodCost: number;
   pax: number;
   generatedAt: string;
   startAreaName?: string;

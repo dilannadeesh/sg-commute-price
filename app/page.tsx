@@ -2,7 +2,15 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import NavBar from "@/components/NavBar";
-import type { PlanResponse, ItinerarySlot, TravelLeg } from "@/lib/types";
+import type {
+  PlanResponse,
+  ItinerarySlot,
+  TravelLegOptions,
+  SingleLegQuote,
+  FlexarLegQuote,
+  FirstLegMode,
+  LegMode,
+} from "@/lib/types";
 import { SG_AREAS } from "@/lib/quote";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -81,11 +89,11 @@ function LocationCombobox({
   value: string;
   onChange: (id: string) => void;
 }) {
-  const [query, setQuery]         = useState("");
-  const [open, setOpen]           = useState(false);
-  const [highlighted, setHi]      = useState(0);
-  const inputRef                  = useRef<HTMLInputElement>(null);
-  const selectedArea              = SG_AREAS.find(a => a.id === value);
+  const [query, setQuery]    = useState("");
+  const [open, setOpen]      = useState(false);
+  const [highlighted, setHi] = useState(0);
+  const inputRef             = useRef<HTMLInputElement>(null);
+  const selectedArea         = SG_AREAS.find(a => a.id === value);
 
   const suggestions = useMemo(() => {
     const q = query.toLowerCase().trim();
@@ -116,7 +124,7 @@ function LocationCombobox({
 
   function handleInput(e: React.ChangeEvent<HTMLInputElement>) {
     setQuery(e.target.value);
-    if (value) onChange("");   // clear selection when user re-types
+    if (value) onChange("");
     setOpen(true);
     setHi(0);
   }
@@ -198,23 +206,166 @@ function PlannerLoader() {
   );
 }
 
-// ── Travel leg ────────────────────────────────────────────────────────────────
+// ── Transport mode selector ───────────────────────────────────────────────────
 
-function TravelLegRow({ leg, label }: { leg: TravelLeg; label?: string }) {
+const MODE_TABS: { id: FirstLegMode; label: string; icon: string }[] = [
+  { id: "publictransport", label: "Transit", icon: "🚇" },
+  { id: "taxi",            label: "Taxi",    icon: "🚕" },
+  { id: "flexar",          label: "Flexar",  icon: "🚌" },
+  { id: "getgo",           label: "GetGo",   icon: "🚗" },
+];
+
+function TransportModeSelector({
+  opts,
+  selected,
+  onChange,
+}: {
+  opts: TravelLegOptions;
+  selected: FirstLegMode;
+  onChange: (m: FirstLegMode) => void;
+}) {
+  const available = MODE_TABS.filter(t => opts[t.id] !== null);
+  return (
+    <div className="planner-transport-tabs">
+      {available.map(tab => (
+        <button
+          key={tab.id}
+          type="button"
+          className={"planner-transport-tab" + (selected === tab.id ? " is-active" : "")}
+          onClick={() => onChange(tab.id)}
+        >
+          {tab.icon} {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Travel leg display helpers ────────────────────────────────────────────────
+
+function LegPill({ q, pax }: { q: SingleLegQuote; pax: number }) {
+  const total = q.perPax ? q.price * pax : q.price;
   return (
     <div className="planner-travel-leg">
       <div className="planner-travel-arrow">↓</div>
       <div className="planner-travel-body">
-        <span className="planner-travel-platform">{leg.platformName}</span>
+        <span className="planner-travel-platform">{q.platformName}</span>
         <span className="planner-travel-dot">·</span>
-        <span className="planner-travel-time">{leg.minutes} min</span>
+        <span className="planner-travel-time">{q.minutes} min</span>
         <span className="planner-travel-dot">·</span>
-        <span className="planner-travel-price">S${leg.price.toFixed(2)}</span>
-        {leg.surgeLabel && <span className="planner-travel-surge"> · {leg.surgeLabel}</span>}
-        {label && <span className="planner-travel-label"> — {label}</span>}
+        <span className="planner-travel-price">
+          S${total.toFixed(2)}
+          {q.perPax && pax > 1 && (
+            <span className="planner-travel-perpax"> ({pax}×S${q.price.toFixed(2)})</span>
+          )}
+        </span>
+        {q.surgeLabel && <span className="planner-travel-surge"> · {q.surgeLabel}</span>}
       </div>
     </div>
   );
+}
+
+function FlexarLegPill({ q }: { q: FlexarLegQuote }) {
+  return (
+    <div className="planner-travel-leg">
+      <div className="planner-travel-arrow">↓</div>
+      <div className="planner-travel-body">
+        <span className="planner-travel-platform">{q.platformName}</span>
+        <span className="planner-travel-dot">·</span>
+        <span className="planner-travel-time">{q.minutes} min drive</span>
+        <span className="planner-travel-dot">·</span>
+        <span className="planner-travel-price">S${q.price.toFixed(2)}</span>
+        <span className="planner-travel-dot">·</span>
+        <span className="planner-travel-walk">🚶 {q.walkInMin}+{q.walkOutMin} min walk</span>
+        {q.surgeLabel && <span className="planner-travel-surge"> · {q.surgeLabel}</span>}
+      </div>
+    </div>
+  );
+}
+
+function GetGoIncludedPill() {
+  return (
+    <div className="planner-travel-leg">
+      <div className="planner-travel-arrow">↓</div>
+      <div className="planner-travel-body">
+        <span className="planner-getgo-badge">🚗 GetGo</span>
+        <span className="planner-travel-dot">·</span>
+        <span className="planner-travel-included">Included in GetGo booking</span>
+      </div>
+    </div>
+  );
+}
+
+// Renders a travel leg for intermediate/return legs based on effective mode
+function IntermediateLeg({
+  opts,
+  firstMode,
+  legMode,
+  onLegModeChange,
+  pax,
+}: {
+  opts: TravelLegOptions;
+  firstMode: FirstLegMode;
+  legMode: LegMode;
+  onLegModeChange: (m: LegMode) => void;
+  pax: number;
+}) {
+  if (firstMode === "getgo") return <GetGoIncludedPill />;
+
+  if (firstMode === "flexar") {
+    if (opts.flexar) return <FlexarLegPill q={opts.flexar} />;
+    // fall back to PT when Flexar not available at this stop
+    return opts.publictransport ? (
+      <div>
+        <div className="planner-flexar-fallback">No Flexar station nearby — using transit</div>
+        <LegPill q={opts.publictransport} pax={pax} />
+      </div>
+    ) : null;
+  }
+
+  // PT or Taxi: show per-leg toggle
+  const hasBoth = !!(opts.publictransport && opts.taxi);
+  return (
+    <div>
+      {hasBoth && (
+        <div className="planner-leg-toggle">
+          <button
+            type="button"
+            className={"planner-leg-btn" + (legMode === "publictransport" ? " is-active" : "")}
+            onClick={() => onLegModeChange("publictransport")}
+          >
+            🚇 Transit
+          </button>
+          <button
+            type="button"
+            className={"planner-leg-btn" + (legMode === "taxi" ? " is-active" : "")}
+            onClick={() => onLegModeChange("taxi")}
+          >
+            🚕 Taxi
+          </button>
+        </div>
+      )}
+      {legMode === "publictransport" && opts.publictransport && (
+        <LegPill q={opts.publictransport} pax={pax} />
+      )}
+      {legMode === "taxi" && opts.taxi && (
+        <LegPill q={opts.taxi} pax={pax} />
+      )}
+    </div>
+  );
+}
+
+// ── Cost helpers ──────────────────────────────────────────────────────────────
+
+function legCost(opts: TravelLegOptions, mode: string, pax: number): number {
+  if (mode === "publictransport") return opts.publictransport ? opts.publictransport.price * pax : 0;
+  if (mode === "taxi")            return opts.taxi ? opts.taxi.price : 0;
+  if (mode === "flexar") {
+    if (opts.flexar) return opts.flexar.price;
+    return opts.publictransport ? opts.publictransport.price * pax : 0; // fallback
+  }
+  if (mode === "getgo") return opts.getgo ? opts.getgo.price : 0;
+  return 0;
 }
 
 // ── Slot card ─────────────────────────────────────────────────────────────────
@@ -275,9 +426,52 @@ function fmt12h(time24: string): string {
 }
 
 function ItineraryResult({ plan, form, onReset }: { plan: PlanResponse; form: FormState; onReset: () => void }) {
+  const pax = plan.pax;
   const paxLabel =
     `${form.adults} adult${form.adults !== 1 ? "s" : ""}` +
     (form.kidAges.length > 0 ? ` + ${form.kidAges.length} kid${form.kidAges.length !== 1 ? "s" : ""}` : "");
+
+  const [firstMode, setFirstMode] = useState<FirstLegMode>(() => {
+    const d = plan.departureOptions;
+    if (!d) return "publictransport";
+    if (d.publictransport) return "publictransport";
+    if (d.taxi) return "taxi";
+    if (d.flexar) return "flexar";
+    if (d.getgo) return "getgo";
+    return "publictransport";
+  });
+
+  // legModes: key = slot index (string), "return" for return leg; value = LegMode
+  const [legModes, setLegModes] = useState<Record<string, LegMode>>({});
+
+  function getEffectiveLegMode(key: string): LegMode {
+    return legModes[key] ?? "publictransport";
+  }
+  function setLegMode(key: string, m: LegMode) {
+    setLegModes(prev => ({ ...prev, [key]: m }));
+  }
+
+  const transportCost = useMemo(() => {
+    let total = 0;
+    if (plan.departureOptions) {
+      total += legCost(plan.departureOptions, firstMode, pax);
+    }
+    if (firstMode !== "getgo") {
+      plan.itinerary.forEach((slot, i) => {
+        if (!slot.travelAfterOptions) return;
+        const mode = firstMode === "flexar" ? "flexar" : getEffectiveLegMode(String(i));
+        total += legCost(slot.travelAfterOptions, mode, pax);
+      });
+      if (plan.returnOptions) {
+        const mode = firstMode === "flexar" ? "flexar" : getEffectiveLegMode("return");
+        total += legCost(plan.returnOptions, mode, pax);
+      }
+    }
+    return total;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firstMode, legModes, plan, pax]);
+
+  const totalCost = transportCost + plan.totalFoodCost + plan.totalActivitiesCost;
 
   return (
     <div className="planner-result-wrap">
@@ -291,10 +485,22 @@ function ItineraryResult({ plan, form, onReset }: { plan: PlanResponse; form: Fo
         <button onClick={onReset} className="planner-outline-btn">Plan another day</button>
       </div>
 
+      {/* Transport mode selector */}
+      {plan.departureOptions && (
+        <div className="planner-transport-selector-wrap">
+          <div className="planner-transport-selector-label">How are you getting around?</div>
+          <TransportModeSelector
+            opts={plan.departureOptions}
+            selected={firstMode}
+            onChange={setFirstMode}
+          />
+        </div>
+      )}
+
       <div className="planner-timeline">
 
         {/* Departure from home */}
-        {plan.departureTravel && (
+        {plan.departureOptions && (
           <div className="planner-timeline-row planner-travel-row">
             <div className="planner-time-col">
               <div className="planner-time-label planner-time-home">🏠</div>
@@ -302,7 +508,15 @@ function ItineraryResult({ plan, form, onReset }: { plan: PlanResponse; form: Fo
             </div>
             <div className="planner-timeline-content">
               <div className="planner-home-label">Leaving from {plan.startAreaName}</div>
-              <TravelLegRow leg={plan.departureTravel} />
+              {firstMode === "flexar" && plan.departureOptions.flexar ? (
+                <FlexarLegPill q={plan.departureOptions.flexar} />
+              ) : firstMode === "getgo" && plan.departureOptions.getgo ? (
+                <LegPill q={plan.departureOptions.getgo} pax={pax} />
+              ) : firstMode === "taxi" && plan.departureOptions.taxi ? (
+                <LegPill q={plan.departureOptions.taxi} pax={pax} />
+              ) : plan.departureOptions.publictransport ? (
+                <LegPill q={plan.departureOptions.publictransport} pax={pax} />
+              ) : null}
             </div>
           </div>
         )}
@@ -312,7 +526,7 @@ function ItineraryResult({ plan, form, onReset }: { plan: PlanResponse; form: Fo
             <div className="planner-timeline-row">
               <div className="planner-time-col">
                 <div className="planner-time-label">{fmt12h(slot.time)}</div>
-                {(i < plan.itinerary.length - 1 || slot.travelAfter || plan.returnTravel) && (
+                {(i < plan.itinerary.length - 1 || slot.travelAfterOptions || plan.returnOptions) && (
                   <div className="planner-time-line" />
                 )}
               </div>
@@ -320,13 +534,19 @@ function ItineraryResult({ plan, form, onReset }: { plan: PlanResponse; form: Fo
                 <SlotCard slot={slot} />
               </div>
             </div>
-            {slot.travelAfter && (
+            {slot.travelAfterOptions && (
               <div className="planner-timeline-row planner-travel-row">
                 <div className="planner-time-col">
                   <div className="planner-time-line" />
                 </div>
                 <div className="planner-timeline-content">
-                  <TravelLegRow leg={slot.travelAfter} />
+                  <IntermediateLeg
+                    opts={slot.travelAfterOptions}
+                    firstMode={firstMode}
+                    legMode={getEffectiveLegMode(String(i))}
+                    onLegModeChange={m => setLegMode(String(i), m)}
+                    pax={pax}
+                  />
                 </div>
               </div>
             )}
@@ -334,29 +554,49 @@ function ItineraryResult({ plan, form, onReset }: { plan: PlanResponse; form: Fo
         ))}
 
         {/* Return home */}
-        {plan.returnTravel && (
+        {plan.returnOptions && (
           <div className="planner-timeline-row planner-travel-row">
             <div className="planner-time-col">
               <div className="planner-time-label planner-time-home">🏠</div>
             </div>
             <div className="planner-timeline-content">
-              <TravelLegRow leg={plan.returnTravel} label={`Back to ${plan.startAreaName}`} />
+              <div className="planner-home-label">Back to {plan.startAreaName}</div>
+              <IntermediateLeg
+                opts={plan.returnOptions}
+                firstMode={firstMode}
+                legMode={getEffectiveLegMode("return")}
+                onLegModeChange={m => setLegMode("return", m)}
+                pax={pax}
+              />
             </div>
           </div>
         )}
       </div>
 
-      <div className="planner-cost-summary">
-        <div className="planner-cost-eyebrow">Estimated spend</div>
-        <div className="planner-cost-amount">S${plan.totalCostMin} – S${plan.totalCostMax}</div>
-        <div className="planner-cost-breakdown">
-          <span>Activities &amp; meals</span>
-          {plan.totalTravelCost > 0 && (
-            <span>Travel ~S${plan.totalTravelCost.toFixed(2)}</span>
-          )}
+      {/* 3-section cost breakdown */}
+      <div className="planner-cost-sections">
+        <div className="planner-cost-section">
+          <span className="planner-cost-section-icon">🚇</span>
+          <span className="planner-cost-section-label">Transport</span>
+          <span className="planner-cost-section-amount">S${transportCost.toFixed(2)}</span>
         </div>
-        <div className="planner-cost-sub">
-          for {plan.pax} {plan.pax === 1 ? "person" : "people"} · including transport
+        <div className="planner-cost-section">
+          <span className="planner-cost-section-icon">🍜</span>
+          <span className="planner-cost-section-label">Food &amp; Drinks</span>
+          <span className="planner-cost-section-amount">S${plan.totalFoodCost.toFixed(2)}</span>
+        </div>
+        <div className="planner-cost-section">
+          <span className="planner-cost-section-icon">🎯</span>
+          <span className="planner-cost-section-label">Activities &amp; Tickets</span>
+          <span className="planner-cost-section-amount">S${plan.totalActivitiesCost.toFixed(2)}</span>
+        </div>
+        <div className="planner-cost-section planner-cost-total-row">
+          <span className="planner-cost-section-icon">💰</span>
+          <span className="planner-cost-section-label">Total</span>
+          <span className="planner-cost-section-amount planner-cost-total-amount">S${totalCost.toFixed(2)}</span>
+        </div>
+        <div className="planner-cost-sections-sub">
+          for {pax} {pax === 1 ? "person" : "people"} · estimated
         </div>
       </div>
 
@@ -385,10 +625,10 @@ export default function PlannerPage() {
   const [error, setError] = useState<string | null>(null);
   const withKids = form.kidAges.length > 0;
 
-  function toggleMeal(m: string) { setForm(f => ({ ...f, meals: f.meals.includes(m) ? f.meals.filter(x => x !== m) : [...f.meals, m] })); }
-  function toggleFoodType(ft: string) { setForm(f => ({ ...f, foodTypes: f.foodTypes.includes(ft) ? f.foodTypes.filter(x => x !== ft) : [...f.foodTypes, ft] })); }
-  function toggleActivity(a: string) { setForm(f => ({ ...f, activities: f.activities.includes(a) ? f.activities.filter(x => x !== a) : [...f.activities, a] })); }
-  function toggleKidAge(age: string) { setForm(f => ({ ...f, kidAges: f.kidAges.includes(age) ? f.kidAges.filter(x => x !== age) : [...f.kidAges, age] })); }
+  function toggleMeal(m: string)       { setForm(f => ({ ...f, meals:     f.meals.includes(m)     ? f.meals.filter(x => x !== m)     : [...f.meals, m] })); }
+  function toggleFoodType(ft: string)  { setForm(f => ({ ...f, foodTypes: f.foodTypes.includes(ft) ? f.foodTypes.filter(x => x !== ft) : [...f.foodTypes, ft] })); }
+  function toggleActivity(a: string)   { setForm(f => ({ ...f, activities: f.activities.includes(a) ? f.activities.filter(x => x !== a) : [...f.activities, a] })); }
+  function toggleKidAge(age: string)   { setForm(f => ({ ...f, kidAges:   f.kidAges.includes(age)  ? f.kidAges.filter(x => x !== age)  : [...f.kidAges, age] })); }
 
   async function handleGenerate() {
     if (form.meals.length === 0 && form.activities.length === 0) return;
@@ -575,7 +815,7 @@ export default function PlannerPage() {
   );
 }
 
-// ── Counter (unchanged) ───────────────────────────────────────────────────────
+// ── Counter ───────────────────────────────────────────────────────────────────
 
 function Counter({ value, onChange, min = 1, max = 12 }: { value: number; onChange: (v: number) => void; min?: number; max?: number }) {
   return (
