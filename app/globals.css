@@ -1059,6 +1059,86 @@ body {
 
 .planner-result-footer { text-align: center; padding-bottom: 8px; }
 
+/* ── Slot title ─────────────────────────────────────────────────────────── */
+.planner-slot-title {
+  font: var(--type-caption); color: var(--color-ink);
+  margin-bottom: 4px;
+}
+
+/* ── Start location select full-width ───────────────────────────────────── */
+.planner-select-full { width: 100%; }
+
+/* ── Cuisine section visual hint ────────────────────────────────────────── */
+.planner-section-sub {
+  background: var(--color-surface-soft);
+  border-top: 1px solid var(--color-hairline-soft) !important;
+}
+
+/* ── Commute section ────────────────────────────────────────────────────── */
+.planner-commute-section {
+  margin-bottom: 28px;
+  padding: 16px 20px 18px;
+  background: #f4f7ff;
+  border: 1px solid #d0d9f5;
+  border-radius: 12px;
+}
+.planner-commute-heading {
+  font: 600 14px/1.25 var(--font-sans);
+  color: var(--color-ink);
+  margin-bottom: 2px;
+}
+.planner-commute-subheading {
+  font: var(--type-caption-sm);
+  color: var(--color-muted);
+  margin-bottom: 14px;
+}
+.planner-commute-cards {
+  display: flex;
+  gap: 12px;
+}
+.planner-commute-card {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid #e0e6f5;
+  border-radius: 10px;
+}
+.planner-commute-badge {
+  display: inline-block;
+  font: 700 10px/1.2 var(--font-sans);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-bottom: 7px;
+}
+.planner-commute-badge-cheap { background: #d1fae5; color: #065f46; }
+.planner-commute-badge-fast  { background: #dbeafe; color: #1e40af; }
+.planner-commute-platform {
+  font: 600 15px/1.2 var(--font-sans);
+  color: var(--color-ink);
+  margin-bottom: 5px;
+}
+.planner-commute-row {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+}
+.planner-commute-price {
+  font: 600 15px/1 var(--font-sans);
+  color: var(--color-ink);
+}
+.planner-commute-time {
+  font: var(--type-body-sm);
+  color: var(--color-muted);
+}
+.planner-commute-surge {
+  font: var(--type-caption-sm);
+  color: var(--color-primary);
+  margin-top: 4px;
+}
+
 /* ── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .planner-page { padding: 0 16px 60px; }
@@ -1072,4 +1152,5 @@ body {
   .planner-time-label { font-size: 10px; padding: 4px 6px; }
   .planner-result-header { flex-direction: column; }
   .planner-cost-amount { font-size: 28px; }
+  .planner-commute-cards { flex-direction: column; }
 }

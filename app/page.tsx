@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import NavBar from "@/components/NavBar";
-import type { PlanResponse, ItinerarySlot } from "@/lib/types";
+import type { PlanResponse, ItinerarySlot, CommuteOption } from "@/lib/types";
+import { SG_AREAS } from "@/lib/quote";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -17,6 +18,13 @@ const MEAL_OPTIONS = [
   { key: "brunch",    label: "Brunch",    emoji: "🥞" },
   { key: "lunch",     label: "Lunch",     emoji: "🍜" },
   { key: "dinner",    label: "Dinner",    emoji: "🌙" },
+];
+
+const CUISINE_OPTIONS = [
+  { key: "western", label: "Western", emoji: "🍔" },
+  { key: "chinese", label: "Chinese", emoji: "🥢" },
+  { key: "indian",  label: "Indian",  emoji: "🍛" },
+  { key: "malay",   label: "Malay",   emoji: "🥘" },
 ];
 
 const ACTIVITY_OPTIONS = [
@@ -44,9 +52,17 @@ const TIME_OPTIONS: string[] = [];
 for (let h = 6; h <= 22; h++) {
   for (const m of [0, 30]) {
     if (h === 22 && m === 30) break;
-    TIME_OPTIONS.push(`${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`);
+    TIME_OPTIONS.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
   }
 }
+
+// Pre-group areas by region for the dropdown
+const GROUPED_AREAS = Object.entries(
+  SG_AREAS.reduce<Record<string, typeof SG_AREAS>>((acc, area) => {
+    (acc[area.region] ??= []).push(area);
+    return acc;
+  }, {})
+).sort(([a], [b]) => a.localeCompare(b));
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -55,9 +71,11 @@ type Step = "form" | "loading" | "result";
 interface FormState {
   adults: number;
   kidAges: string[];
+  startAreaId: string;
   startTime: string;
   durationHours: number;
   meals: string[];
+  foodTypes: string[];
   activities: string[];
 }
 
@@ -127,6 +145,7 @@ function SlotCard({ slot }: { slot: ItinerarySlot }) {
           {slot.isRealDeal && <span className="planner-live-badge">Live deal</span>}
         </div>
 
+        <p className="planner-slot-title">{slot.title}</p>
         <p className="planner-slot-excerpt">{slot.excerpt}</p>
 
         {slot.tags.filter(t => t !== "#deals").length > 0 && (
@@ -155,6 +174,23 @@ function SlotCard({ slot }: { slot: ItinerarySlot }) {
   );
 }
 
+function CommuteCard({ opt }: { opt: CommuteOption }) {
+  const isCheap = opt.badge === "Cheapest";
+  return (
+    <div className="planner-commute-card">
+      <span className={"planner-commute-badge " + (isCheap ? "planner-commute-badge-cheap" : "planner-commute-badge-fast")}>
+        {opt.badge}
+      </span>
+      <div className="planner-commute-platform">{opt.platformName}</div>
+      <div className="planner-commute-row">
+        <span className="planner-commute-price">S${opt.price.toFixed(2)}</span>
+        <span className="planner-commute-time">~{opt.minutes} min</span>
+      </div>
+      {opt.surgeLabel && <div className="planner-commute-surge">{opt.surgeLabel}</div>}
+    </div>
+  );
+}
+
 function fmt12h(time24: string): string {
   const [h, m] = time24.split(":").map(Number);
   const ampm = h >= 12 ? "PM" : "AM";
@@ -177,6 +213,22 @@ function ItineraryResult({ plan, form, onReset }: { plan: PlanResponse; form: Fo
         </div>
         <button onClick={onReset} className="planner-outline-btn">Plan another day</button>
       </div>
+
+      {plan.commuteOptions && plan.commuteOptions.length > 0 && (
+        <div className="planner-commute-section">
+          <div className="planner-commute-heading">
+            Getting there from {plan.startAreaName}
+          </div>
+          <div className="planner-commute-subheading">
+            To {plan.firstDestAreaName} · estimated fares
+          </div>
+          <div className="planner-commute-cards">
+            {plan.commuteOptions.map(opt => (
+              <CommuteCard key={opt.badge} opt={opt} />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="planner-timeline">
         {plan.itinerary.map((slot, i) => (
@@ -214,9 +266,11 @@ export default function PlannerPage() {
   const [form, setForm] = useState<FormState>({
     adults: 2,
     kidAges: [],
+    startAreaId: "",
     startTime: "10:00",
     durationHours: 4,
     meals: ["lunch"],
+    foodTypes: [],
     activities: [],
   });
   const [plan, setPlan]   = useState<PlanResponse | null>(null);
@@ -226,6 +280,9 @@ export default function PlannerPage() {
 
   function toggleMeal(m: string) {
     setForm(f => ({ ...f, meals: f.meals.includes(m) ? f.meals.filter(x => x !== m) : [...f.meals, m] }));
+  }
+  function toggleFoodType(ft: string) {
+    setForm(f => ({ ...f, foodTypes: f.foodTypes.includes(ft) ? f.foodTypes.filter(x => x !== ft) : [...f.foodTypes, ft] }));
   }
   function toggleActivity(a: string) {
     setForm(f => ({ ...f, activities: f.activities.includes(a) ? f.activities.filter(x => x !== a) : [...f.activities, a] }));
@@ -324,6 +381,24 @@ export default function PlannerPage() {
               )}
             </div>
 
+            {/* Start location */}
+            <div className="planner-section">
+              <h3 className="planner-section-title">Where are you starting from?</h3>
+              <p className="planner-section-hint">Optional — we&apos;ll show commute options from your area to the first destination.</p>
+              <select
+                className="planner-select planner-select-full"
+                value={form.startAreaId}
+                onChange={e => setForm(f => ({ ...f, startAreaId: e.target.value }))}
+              >
+                <option value="">Select your area (optional)</option>
+                {GROUPED_AREAS.map(([region, areas]) => (
+                  <optgroup key={region} label={region}>
+                    {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+
             {/* Timing */}
             <div className="planner-section">
               <h3 className="planner-section-title">When are you heading out?</h3>
@@ -334,7 +409,7 @@ export default function PlannerPage() {
                     onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))}>
                     {TIME_OPTIONS.map(t => {
                       const [h, m] = t.split(":").map(Number);
-                      return <option key={t} value={t}>{h % 12 || 12}:{String(m).padStart(2,"0")} {h >= 12 ? "PM" : "AM"}</option>;
+                      return <option key={t} value={t}>{h % 12 || 12}:{String(m).padStart(2, "0")} {h >= 12 ? "PM" : "AM"}</option>;
                     })}
                   </select>
                 </div>
@@ -367,6 +442,23 @@ export default function PlannerPage() {
                 ))}
               </div>
             </div>
+
+            {/* Cuisine preference — shown only when meals are selected */}
+            {form.meals.length > 0 && (
+              <div className="planner-section planner-section-sub">
+                <h3 className="planner-section-title">Preferred cuisine?</h3>
+                <p className="planner-section-hint">Optional — leave blank to see all options. Multi-select welcome.</p>
+                <div className="planner-chip-row">
+                  {CUISINE_OPTIONS.map(c => (
+                    <button key={c.key} type="button"
+                      className={"planner-chip" + (form.foodTypes.includes(c.key) ? " is-active" : "")}
+                      onClick={() => toggleFoodType(c.key)}>
+                      {c.emoji} {c.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Activities */}
             <div className="planner-section planner-section-last">

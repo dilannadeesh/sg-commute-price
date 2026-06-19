@@ -133,6 +133,17 @@ export interface PlanResponse {
   totalCostMax: number;
   pax: number;
   generatedAt: string;
+  commuteOptions?: CommuteOption[];
+  startAreaName?: string;
+  firstDestAreaName?: string;
+}
+
+export interface CommuteOption {
+  platformName: string;
+  price: number;
+  minutes: number;
+  badge: "Cheapest" | "Fastest";
+  surgeLabel: string | null;
 }
 
 export interface AirlineDeal {
