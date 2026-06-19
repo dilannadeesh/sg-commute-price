@@ -265,19 +265,40 @@ function LegPill({ q, pax }: { q: SingleLegQuote; pax: number }) {
   );
 }
 
+function fmtM(metres: number): string {
+  return metres >= 1000 ? `${(metres / 1000).toFixed(1)} km` : `${metres} m`;
+}
+
 function FlexarLegPill({ q }: { q: FlexarLegQuote }) {
+  const driveMin = Math.max(1, q.minutes - q.walkInMin - q.walkOutMin);
   return (
-    <div className="planner-travel-leg">
+    <div className="planner-travel-leg planner-travel-leg-flexar">
       <div className="planner-travel-arrow">↓</div>
-      <div className="planner-travel-body">
-        <span className="planner-travel-platform">{q.platformName}</span>
-        <span className="planner-travel-dot">·</span>
-        <span className="planner-travel-time">{q.minutes} min drive</span>
-        <span className="planner-travel-dot">·</span>
-        <span className="planner-travel-price">S${q.price.toFixed(2)}</span>
-        <span className="planner-travel-dot">·</span>
-        <span className="planner-travel-walk">🚶 {q.walkInMin}+{q.walkOutMin} min walk</span>
-        {q.surgeLabel && <span className="planner-travel-surge"> · {q.surgeLabel}</span>}
+      <div className="planner-flexar-detail">
+        <div className="planner-flexar-row">
+          <span className="planner-flexar-walk-icon">🚶</span>
+          <span className="planner-flexar-walk-text">
+            Walk {fmtM(q.walkInKm)} to <strong>{q.pickupStationName}</strong>
+            <span className="planner-flexar-walk-min"> ({q.walkInMin} min)</span>
+          </span>
+        </div>
+        <div className="planner-flexar-row planner-flexar-drive-row">
+          <span className="planner-flexar-drive-icon">🚌</span>
+          <span className="planner-flexar-drive-text">
+            <span className="planner-travel-platform">Flexar</span>
+            <span className="planner-travel-dot"> · </span>
+            <span className="planner-travel-time">{driveMin} min drive</span>
+            <span className="planner-travel-dot"> · </span>
+            <span className="planner-travel-price">S${q.price.toFixed(2)}</span>
+          </span>
+        </div>
+        <div className="planner-flexar-row">
+          <span className="planner-flexar-walk-icon">🚶</span>
+          <span className="planner-flexar-walk-text">
+            Walk {fmtM(q.walkOutKm)} from <strong>{q.dropoffStationName}</strong>
+            <span className="planner-flexar-walk-min"> ({q.walkOutMin} min)</span>
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -296,7 +317,7 @@ function GetGoIncludedPill() {
   );
 }
 
-// Renders a travel leg for intermediate/return legs based on effective mode
+// Each intermediate/return leg gets its own PT / Taxi / Flexar toggle
 function IntermediateLeg({
   opts,
   firstMode,
@@ -310,46 +331,43 @@ function IntermediateLeg({
   onLegModeChange: (m: LegMode) => void;
   pax: number;
 }) {
+  // GetGo covers the whole day — no per-leg cost
   if (firstMode === "getgo") return <GetGoIncludedPill />;
 
-  if (firstMode === "flexar") {
-    if (opts.flexar) return <FlexarLegPill q={opts.flexar} />;
-    // fall back to PT when Flexar not available at this stop
-    return opts.publictransport ? (
-      <div>
-        <div className="planner-flexar-fallback">No Flexar station nearby — using transit</div>
-        <LegPill q={opts.publictransport} pax={pax} />
-      </div>
-    ) : null;
-  }
+  const availableModes: { id: LegMode; label: string }[] = [];
+  if (opts.publictransport) availableModes.push({ id: "publictransport", label: "🚇 Transit" });
+  if (opts.taxi)            availableModes.push({ id: "taxi",            label: "🚕 Taxi" });
+  if (opts.flexar)          availableModes.push({ id: "flexar",          label: "🚌 Flexar" });
 
-  // PT or Taxi: show per-leg toggle
-  const hasBoth = !!(opts.publictransport && opts.taxi);
+  // If the stored mode isn't available for this leg, fall back gracefully
+  const effectiveMode: LegMode = availableModes.some(m => m.id === legMode)
+    ? legMode
+    : (availableModes[0]?.id ?? "publictransport");
+
   return (
     <div>
-      {hasBoth && (
+      {availableModes.length > 1 && (
         <div className="planner-leg-toggle">
-          <button
-            type="button"
-            className={"planner-leg-btn" + (legMode === "publictransport" ? " is-active" : "")}
-            onClick={() => onLegModeChange("publictransport")}
-          >
-            🚇 Transit
-          </button>
-          <button
-            type="button"
-            className={"planner-leg-btn" + (legMode === "taxi" ? " is-active" : "")}
-            onClick={() => onLegModeChange("taxi")}
-          >
-            🚕 Taxi
-          </button>
+          {availableModes.map(m => (
+            <button
+              key={m.id}
+              type="button"
+              className={"planner-leg-btn" + (effectiveMode === m.id ? " is-active" : "")}
+              onClick={() => onLegModeChange(m.id)}
+            >
+              {m.label}
+            </button>
+          ))}
         </div>
       )}
-      {legMode === "publictransport" && opts.publictransport && (
+      {effectiveMode === "publictransport" && opts.publictransport && (
         <LegPill q={opts.publictransport} pax={pax} />
       )}
-      {legMode === "taxi" && opts.taxi && (
+      {effectiveMode === "taxi" && opts.taxi && (
         <LegPill q={opts.taxi} pax={pax} />
+      )}
+      {effectiveMode === "flexar" && opts.flexar && (
+        <FlexarLegPill q={opts.flexar} />
       )}
     </div>
   );
@@ -358,13 +376,13 @@ function IntermediateLeg({
 // ── Cost helpers ──────────────────────────────────────────────────────────────
 
 function legCost(opts: TravelLegOptions, mode: string, pax: number): number {
-  if (mode === "publictransport") return opts.publictransport ? opts.publictransport.price * pax : 0;
-  if (mode === "taxi")            return opts.taxi ? opts.taxi.price : 0;
-  if (mode === "flexar") {
-    if (opts.flexar) return opts.flexar.price;
-    return opts.publictransport ? opts.publictransport.price * pax : 0; // fallback
-  }
-  if (mode === "getgo") return opts.getgo ? opts.getgo.price : 0;
+  if (mode === "publictransport" && opts.publictransport) return opts.publictransport.price * pax;
+  if (mode === "taxi"            && opts.taxi)            return opts.taxi.price;
+  if (mode === "flexar"          && opts.flexar)          return opts.flexar.price;
+  if (mode === "getgo"           && opts.getgo)           return opts.getgo.price;
+  // Fallback: cheapest available
+  if (opts.publictransport) return opts.publictransport.price * pax;
+  if (opts.taxi)            return opts.taxi.price;
   return 0;
 }
 
@@ -453,18 +471,18 @@ function ItineraryResult({ plan, form, onReset }: { plan: PlanResponse; form: Fo
 
   const transportCost = useMemo(() => {
     let total = 0;
+    // Departure leg (controlled by firstMode)
     if (plan.departureOptions) {
       total += legCost(plan.departureOptions, firstMode, pax);
     }
+    // GetGo covers the whole day — intermediate legs are included
     if (firstMode !== "getgo") {
       plan.itinerary.forEach((slot, i) => {
         if (!slot.travelAfterOptions) return;
-        const mode = firstMode === "flexar" ? "flexar" : getEffectiveLegMode(String(i));
-        total += legCost(slot.travelAfterOptions, mode, pax);
+        total += legCost(slot.travelAfterOptions, getEffectiveLegMode(String(i)), pax);
       });
       if (plan.returnOptions) {
-        const mode = firstMode === "flexar" ? "flexar" : getEffectiveLegMode("return");
-        total += legCost(plan.returnOptions, mode, pax);
+        total += legCost(plan.returnOptions, getEffectiveLegMode("return"), pax);
       }
     }
     return total;

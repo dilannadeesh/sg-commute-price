@@ -126,7 +126,11 @@ export interface SingleLegQuote {
 
 export interface FlexarLegQuote extends SingleLegQuote {
   walkInMin: number;
+  walkInKm: number;             // metres
   walkOutMin: number;
+  walkOutKm: number;            // metres
+  pickupStationName: string;
+  dropoffStationName: string;
 }
 
 export interface GetGoLegQuote extends SingleLegQuote {
@@ -140,12 +144,12 @@ export interface TravelLegOptions {
   toAreaId: string;
   publictransport: SingleLegQuote | null;
   taxi: SingleLegQuote | null;           // cheapest hail platform
-  flexar: FlexarLegQuote | null;         // null if no station within 15-min walk
+  flexar: FlexarLegQuote | null;         // null if no station within 2 km walk
   getgo: GetGoLegQuote | null;
 }
 
 export type FirstLegMode = "publictransport" | "taxi" | "flexar" | "getgo";
-export type LegMode = "publictransport" | "taxi";
+export type LegMode = "publictransport" | "taxi" | "flexar";
 
 // ── Itinerary types ───────────────────────────────────────────────────────────
 

@@ -208,6 +208,7 @@ function computeLegOptions(
   const quotes    = quoteAll(from, to, timeBlock, {
     getgoStopoverHours: dayDurationHours,
     flexarStations: FLEXAR_STATIONS,
+    flexar: { maxWalkKm: 2 },  // show Flexar if pickup/dropoff within 2 km walk
   });
   const avail = quotes.filter(q => !q.unavailable);
 
@@ -219,15 +220,23 @@ function computeLegOptions(
   const flexarQ = avail.find(q => q.platformId === "flexar");
   const getgoQ  = avail.find(q => q.platformId === "getgo");
 
-  // Flexar: only include if stations are within 15-min walk at both ends
+  // Flexar: only include if both pickup and dropoff stations are within 2 km
   const flexarOk = !!(
     flexarQ?.flexar &&
-    flexarQ.flexar.walkInMin <= 15 &&
-    flexarQ.flexar.walkOutMin <= 15
+    flexarQ.flexar.walkInKm  <= 2000 &&
+    flexarQ.flexar.walkOutKm <= 2000
   );
 
   const flexarLeg: FlexarLegQuote | null = flexarOk && flexarQ
-    ? { ...toSingleLeg(flexarQ, false), walkInMin: flexarQ.flexar!.walkInMin, walkOutMin: flexarQ.flexar!.walkOutMin }
+    ? {
+        ...toSingleLeg(flexarQ, false),
+        walkInMin:          flexarQ.flexar!.walkInMin,
+        walkInKm:           flexarQ.flexar!.walkInKm,
+        walkOutMin:         flexarQ.flexar!.walkOutMin,
+        walkOutKm:          flexarQ.flexar!.walkOutKm,
+        pickupStationName:  flexarQ.flexar!.pickupStation.name,
+        dropoffStationName: flexarQ.flexar!.dropoffStation.name,
+      }
     : null;
 
   const getgoLeg: GetGoLegQuote | null = getgoQ?.getgo
@@ -360,56 +369,69 @@ function buildItinerary(req: PlanRequest, foodDeals: Deal[], weekendDeals: Deal[
   const usedCuratedAct  = new Set<string>();
   const LIVE_BONUS      = 15;
 
-  // Pass 1: pick content for each slot, track areas
   interface Draft { spec: SlotSpec; areaId: string | null; content: ItinerarySlot; }
-  const drafts: Draft[] = [];
-  let lastAreaId: string | null = startAreaId || null;
 
-  for (const spec of specs) {
-    if (spec.type === "meal") {
-      const mealType = spec.mealType!;
-      const dealCands = foodDeals.filter(d => !usedFoodDealIds.has(d.id)).map(d => ({ kind: "deal" as const, d, score: scoreFood(d, mealType, foodTypes) + LIVE_BONUS }));
-      const curatedCands = CURATED_FOOD_DB.filter(f => !usedCuratedFood.has(f.title)).map(f => ({ kind: "curated" as const, f, score: scoreCuratedFood(f, mealType, foodTypes, lastAreaId) }));
-      const best = [...dealCands, ...curatedCands].sort((a, b) => b.score - a.score)[0];
-      if (!best) continue;
+  // ── Pass 1a: Pick ACTIVITIES first (area-cluster pass) ────────────────────
+  const activitySpecs = specs.filter(s => s.type === "activity");
+  const mealSpecs     = specs.filter(s => s.type === "meal");
+  const activityDrafts: Draft[] = [];
+  let actLastAreaId: string | null = startAreaId || null;
 
-      let areaId: string | null = null;
-      let slot: ItinerarySlot;
-      if (best.kind === "deal") {
-        usedFoodDealIds.add(best.d.id);
-        const cpp = estimateCostPerPax(best.d, "meal", mealType);
-        slot = { time: formatTime(spec.targetH), type: "meal", mealType, title: best.d.excerpt.slice(0, 80), excerpt: best.d.excerpt, estimatedCostPerPax: cpp, totalCost: cpp * pax, imageUrl: best.d.imageUrl, moreInfoUrl: best.d.moreInfoUrl, telegramUrl: best.d.telegramUrl, tags: best.d.tags, isRealDeal: true, dealBadge: extractDealBadge(best.d.text) };
-      } else {
-        usedCuratedFood.add(best.f.title);
-        areaId = pickFoodArea(best.f, lastAreaId);
-        const cpp = best.f.estimatedCostPerPax;
-        slot = { time: formatTime(spec.targetH), type: "meal", mealType, title: best.f.title, excerpt: best.f.excerpt, estimatedCostPerPax: cpp, totalCost: cpp * pax, moreInfoUrl: best.f.moreInfoUrl, tags: best.f.tags, isRealDeal: false, areaId: areaId ?? undefined, areaName: SG_AREAS.find(a => a.id === areaId)?.name };
-      }
-      if (areaId) lastAreaId = areaId;
-      drafts.push({ spec, areaId, content: slot });
+  for (const spec of activitySpecs) {
+    const dealCands    = weekendDeals.filter(d => !usedActDealIds.has(d.id)).map(d => ({ kind: "deal" as const, d, score: scoreActivity(d, activities, hasKids, hasYoungKids) + LIVE_BONUS }));
+    const curatedCands = CURATED_ACTIVITIES.filter(ca => !usedCuratedAct.has(ca.title)).map(ca => ({ kind: "curated" as const, ca, score: scoreCuratedActivity(ca, activities, hasKids, hasYoungKids, actLastAreaId, spec.targetH) }));
+    const best = [...dealCands, ...curatedCands].sort((a, b) => b.score - a.score)[0];
+    if (!best) continue;
 
+    let areaId: string | null = null;
+    let slot: ItinerarySlot;
+    if (best.kind === "deal") {
+      usedActDealIds.add(best.d.id);
+      const cpp = estimateCostPerPax(best.d, "activity");
+      slot = { time: formatTime(spec.targetH), type: "activity", title: best.d.excerpt.slice(0, 80), excerpt: best.d.excerpt, estimatedCostPerPax: cpp, totalCost: cpp * pax, imageUrl: best.d.imageUrl, moreInfoUrl: best.d.moreInfoUrl, telegramUrl: best.d.telegramUrl, tags: best.d.tags, isRealDeal: true, dealBadge: extractDealBadge(best.d.text) };
     } else {
-      const dealCands = weekendDeals.filter(d => !usedActDealIds.has(d.id)).map(d => ({ kind: "deal" as const, d, score: scoreActivity(d, activities, hasKids, hasYoungKids) + LIVE_BONUS }));
-      const curatedCands = CURATED_ACTIVITIES.filter(ca => !usedCuratedAct.has(ca.title)).map(ca => ({ kind: "curated" as const, ca, score: scoreCuratedActivity(ca, activities, hasKids, hasYoungKids, lastAreaId, spec.targetH) }));
-      const best = [...dealCands, ...curatedCands].sort((a, b) => b.score - a.score)[0];
-      if (!best) continue;
-
-      let areaId: string | null = null;
-      let slot: ItinerarySlot;
-      if (best.kind === "deal") {
-        usedActDealIds.add(best.d.id);
-        const cpp = estimateCostPerPax(best.d, "activity");
-        slot = { time: formatTime(spec.targetH), type: "activity", title: best.d.excerpt.slice(0, 80), excerpt: best.d.excerpt, estimatedCostPerPax: cpp, totalCost: cpp * pax, imageUrl: best.d.imageUrl, moreInfoUrl: best.d.moreInfoUrl, telegramUrl: best.d.telegramUrl, tags: best.d.tags, isRealDeal: true, dealBadge: extractDealBadge(best.d.text) };
-      } else {
-        usedCuratedAct.add(best.ca.title);
-        areaId = best.ca.areaId;
-        const cpp = best.ca.estimatedCostPerPax;
-        slot = { time: formatTime(spec.targetH), type: "activity", title: best.ca.title, excerpt: best.ca.excerpt, estimatedCostPerPax: cpp, totalCost: cpp * pax, moreInfoUrl: best.ca.moreInfoUrl, tags: best.ca.tags, isRealDeal: false, areaId, areaName: SG_AREAS.find(a => a.id === areaId)?.name };
-      }
-      if (areaId) lastAreaId = areaId;
-      drafts.push({ spec, areaId, content: slot });
+      usedCuratedAct.add(best.ca.title);
+      areaId = best.ca.areaId;
+      const cpp = best.ca.estimatedCostPerPax;
+      slot = { time: formatTime(spec.targetH), type: "activity", title: best.ca.title, excerpt: best.ca.excerpt, estimatedCostPerPax: cpp, totalCost: cpp * pax, moreInfoUrl: best.ca.moreInfoUrl, tags: best.ca.tags, isRealDeal: false, areaId, areaName: SG_AREAS.find(a => a.id === areaId)?.name };
     }
+    if (areaId) actLastAreaId = areaId;
+    activityDrafts.push({ spec, areaId, content: slot });
   }
+
+  // ── Pass 1b: Pick MEALS using nearby activity area as context ─────────────
+  const mealDrafts: Draft[] = [];
+  for (const spec of mealSpecs) {
+    const mealType = spec.mealType!;
+    // Find the activity closest in time to anchor food location
+    const contextAreaId = activityDrafts.length > 0
+      ? activityDrafts.reduce((best, d) =>
+          Math.abs(d.spec.targetH - spec.targetH) < Math.abs(best.spec.targetH - spec.targetH) ? d : best
+        ).areaId
+      : (startAreaId || null);
+
+    const dealCands    = foodDeals.filter(d => !usedFoodDealIds.has(d.id)).map(d => ({ kind: "deal" as const, d, score: scoreFood(d, mealType, foodTypes) + LIVE_BONUS }));
+    const curatedCands = CURATED_FOOD_DB.filter(f => !usedCuratedFood.has(f.title)).map(f => ({ kind: "curated" as const, f, score: scoreCuratedFood(f, mealType, foodTypes, contextAreaId) }));
+    const best = [...dealCands, ...curatedCands].sort((a, b) => b.score - a.score)[0];
+    if (!best) continue;
+
+    let areaId: string | null = null;
+    let slot: ItinerarySlot;
+    if (best.kind === "deal") {
+      usedFoodDealIds.add(best.d.id);
+      const cpp = estimateCostPerPax(best.d, "meal", mealType);
+      slot = { time: formatTime(spec.targetH), type: "meal", mealType, title: best.d.excerpt.slice(0, 80), excerpt: best.d.excerpt, estimatedCostPerPax: cpp, totalCost: cpp * pax, imageUrl: best.d.imageUrl, moreInfoUrl: best.d.moreInfoUrl, telegramUrl: best.d.telegramUrl, tags: best.d.tags, isRealDeal: true, dealBadge: extractDealBadge(best.d.text) };
+    } else {
+      usedCuratedFood.add(best.f.title);
+      areaId = pickFoodArea(best.f, contextAreaId);
+      const cpp = best.f.estimatedCostPerPax;
+      slot = { time: formatTime(spec.targetH), type: "meal", mealType, title: best.f.title, excerpt: best.f.excerpt, estimatedCostPerPax: cpp, totalCost: cpp * pax, moreInfoUrl: best.f.moreInfoUrl, tags: best.f.tags, isRealDeal: false, areaId: areaId ?? undefined, areaName: SG_AREAS.find(a => a.id === areaId)?.name };
+    }
+    mealDrafts.push({ spec, areaId, content: slot });
+  }
+
+  // Merge activities + meals back into chronological order
+  const drafts: Draft[] = [...activityDrafts, ...mealDrafts].sort((a, b) => a.spec.targetH - b.spec.targetH);
 
   // Pass 2: compute travel options and adjust times
   const itinerary: ItinerarySlot[] = [];

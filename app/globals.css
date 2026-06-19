@@ -1191,10 +1191,33 @@ body {
   font: 400 11px var(--font-sans); color: var(--color-muted-soft);
 }
 
-/* ── Flexar fallback note ────────────────────────────────────────────────── */
-.planner-flexar-fallback {
-  font: 400 11px var(--font-sans); color: #7A4DFF;
-  margin-bottom: 2px; font-style: italic;
+/* ── Flexar station detail ───────────────────────────────────────────────── */
+.planner-travel-leg-flexar {
+  align-items: flex-start;
+}
+.planner-flexar-detail {
+  display: flex; flex-direction: column; gap: 5px;
+  padding-top: 2px;
+}
+.planner-flexar-row {
+  display: flex; align-items: baseline; gap: 6px;
+  font: var(--type-body-sm);
+}
+.planner-flexar-walk-icon,
+.planner-flexar-drive-icon {
+  font-size: 14px; flex-shrink: 0;
+}
+.planner-flexar-walk-text {
+  color: var(--color-muted); font-size: 12px;
+}
+.planner-flexar-walk-text strong { color: #7A4DFF; font-weight: 600; }
+.planner-flexar-walk-min { color: var(--color-muted-soft); }
+.planner-flexar-drive-text {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 3px;
+}
+.planner-flexar-drive-row {
+  padding: 4px 0; border-top: 1px solid #f0eeff; border-bottom: 1px solid #f0eeff;
+  margin: 1px 0;
 }
 
 /* ── 3-section cost breakdown ────────────────────────────────────────────── */
