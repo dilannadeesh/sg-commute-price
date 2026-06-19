@@ -111,6 +111,30 @@ export interface Deal {
   imageUrl?: string;
 }
 
+export interface ItinerarySlot {
+  time: string;
+  type: "meal" | "activity";
+  mealType?: string;
+  title: string;
+  excerpt: string;
+  estimatedCostPerPax: number;
+  totalCost: number;
+  imageUrl?: string;
+  moreInfoUrl: string;
+  telegramUrl?: string;
+  tags: string[];
+  isRealDeal: boolean;
+  dealBadge?: string;
+}
+
+export interface PlanResponse {
+  itinerary: ItinerarySlot[];
+  totalCostMin: number;
+  totalCostMax: number;
+  pax: number;
+  generatedAt: string;
+}
+
 export interface AirlineDeal {
   id: number;
   text: string;
