@@ -111,6 +111,15 @@ export interface Deal {
   imageUrl?: string;
 }
 
+export interface TravelLeg {
+  fromName: string;
+  toName: string;
+  platformName: string;
+  minutes: number;
+  price: number;
+  surgeLabel: string | null;
+}
+
 export interface ItinerarySlot {
   time: string;
   type: "meal" | "activity";
@@ -125,25 +134,21 @@ export interface ItinerarySlot {
   tags: string[];
   isRealDeal: boolean;
   dealBadge?: string;
+  areaId?: string;
+  areaName?: string;
+  travelAfter?: TravelLeg;
 }
 
 export interface PlanResponse {
   itinerary: ItinerarySlot[];
+  departureTravel?: TravelLeg;
+  returnTravel?: TravelLeg;
   totalCostMin: number;
   totalCostMax: number;
+  totalTravelCost: number;
   pax: number;
   generatedAt: string;
-  commuteOptions?: CommuteOption[];
   startAreaName?: string;
-  firstDestAreaName?: string;
-}
-
-export interface CommuteOption {
-  platformName: string;
-  price: number;
-  minutes: number;
-  badge: "Cheapest" | "Fastest";
-  surgeLabel: string | null;
 }
 
 export interface AirlineDeal {
