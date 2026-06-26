@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/deals/refresh",
-      "schedule": "59 15 * * *"
+      "schedule": "0 15 * * *"
     },
     {
       "path": "/api/airline-deals/refresh",

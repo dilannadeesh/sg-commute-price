@@ -57,7 +57,7 @@ export default function FoodDealsPage() {
 
       <div className="deals-page">
         <header className="deals-hero">
-          <div className="cpc-hero-eyebrow">Updated daily · sourced from @sgfooddeals</div>
+          <div className="cpc-hero-eyebrow">Updated daily · sourced from @sgfooddeals &amp; @sgdeals</div>
           <h1 className="cpc-hero-title" style={{ fontSize: 32 }}>
             Singapore Food Deals Today
           </h1>
@@ -151,7 +151,7 @@ export default function FoodDealsPage() {
               </div>
               <div className="deals-grid">
                 {filtered.map(deal => (
-                  <DealCard key={deal.id} deal={deal} />
+                  <DealCard key={deal.telegramUrl} deal={deal} />
                 ))}
               </div>
             </>
