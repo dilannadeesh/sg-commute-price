@@ -207,6 +207,123 @@ async function scrapeChannel(
   return deals;
 }
 
+// ── Singpromos.com scraper ────────────────────────────────────────────────────
+// Scrapes https://singpromos.com/bydate/ontoday/?s=Food+Promo
+// Standard WordPress archive/search page — articles use class="entry-*" markup.
+// ID offset 2_000_000_000 avoids collision with Telegram channel IDs.
+
+const SINGPROMOS_ID_OFFSET  = 2_000_000_000;
+const SINGPROMOS_MAX_PAGES  = 3;
+const SINGPROMOS_SEARCH_URL = "https://singpromos.com/bydate/ontoday/?s=Food+Promo";
+
+// Stable numeric ID from a URL string via djb2 hash (32-bit, always positive).
+function urlToId(url: string): number {
+  let h = 5381;
+  for (let i = 0; i < url.length; i++) {
+    h = (((h << 5) + h) + url.charCodeAt(i)) | 0; // 32-bit signed
+  }
+  return SINGPROMOS_ID_OFFSET + Math.abs(h);
+}
+
+// Convert WP category/tag name → "#hashtag" format
+function wpCatToTag(name: string): string {
+  return `#${name.toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+}
+
+function extractWpTags(articleHtml: string): string[] {
+  return [...articleHtml.matchAll(/rel="(?:category tag|tag)"[^>]*>([^<]+)<\/a>/gi)]
+    .map(m => wpCatToTag(m[1].trim()))
+    .filter(t => t.length > 1);
+}
+
+async function scrapeSingpromos(seenUrls: Set<string>): Promise<Deal[]> {
+  const deals: Deal[] = [];
+  const cutoff = Date.now() - MAX_AGE_MS;
+
+  for (let page = 1; page <= SINGPROMOS_MAX_PAGES; page++) {
+    const url = page === 1
+      ? SINGPROMOS_SEARCH_URL
+      : `https://singpromos.com/bydate/ontoday/page/${page}/?s=Food+Promo`;
+
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        headers: {
+          "User-Agent": BROWSER_UA,
+          "Accept":     "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(10_000),
+      });
+    } catch {
+      break;
+    }
+    if (!res.ok) break;
+
+    const html = await res.text();
+
+    // Each WP post is wrapped in <article ...>…</article>
+    const articles = [...html.matchAll(/<article\b[^>]*>([\s\S]*?)<\/article>/gi)].map(m => m[0]);
+    if (articles.length === 0) break;
+
+    for (const chunk of articles) {
+      // Post URL + title: <h2 class="entry-title"><a href="…">…</a></h2>
+      const titleMatch =
+        chunk.match(/class="[^"]*entry-title[^"]*"[^>]*>[\s\S]*?<a\s[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/i) ??
+        chunk.match(/<h[1-4][^>]*>[\s\S]*?<a\s[^>]*href="(https?:\/\/singpromos\.com[^"]+)"[^>]*>([\s\S]*?)<\/a>/i);
+      if (!titleMatch) continue;
+
+      const postUrl = titleMatch[1];
+      if (seenUrls.has(postUrl)) continue;
+      seenUrls.add(postUrl);
+
+      // Date: <time … datetime="2024-06-29T…">
+      const dateMatch = chunk.match(/datetime="([^"]+)"/i);
+      const date = dateMatch ? new Date(dateMatch[1]).toISOString() : new Date().toISOString();
+      if (new Date(date).getTime() < cutoff) continue;
+
+      // Excerpt: <div class="entry-summary">…</div>
+      const summaryMatch =
+        chunk.match(/class="[^"]*entry-summary[^"]*"[^>]*>([\s\S]*?)<\/div>/i) ??
+        chunk.match(/class="[^"]*entry-content[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+      const excerpt = summaryMatch
+        ? stripHtml(summaryMatch[1]).replace(/Read more\s*…?\s*$/i, "").trim().slice(0, 240)
+        : stripHtml(titleMatch[2]).slice(0, 240);
+
+      // Featured image — try wp-post-image class, then any singpromos CDN img
+      const imgMatch =
+        chunk.match(/<img[^>]*class="[^"]*wp-post-image[^"]*"[^>]*src="([^"]+)"/i) ??
+        chunk.match(/class="[^"]*(?:post-thumbnail|featured)[^"]*"[\s\S]*?<img[^>]*src="([^"]+)"/i) ??
+        chunk.match(/<img[^>]*src="(https?:\/\/singpromos\.com[^"]+\.(jpg|jpeg|png|webp)(?:\?[^"]*)?)"[^>]*/i);
+      const imageUrl = imgMatch
+        ? `/api/telegram-image?url=${encodeURIComponent(imgMatch[1])}`
+        : undefined;
+
+      const tags = extractWpTags(chunk);
+
+      deals.push({
+        id:          urlToId(postUrl),
+        text:        excerpt,
+        excerpt,
+        date,
+        tags,
+        telegramUrl: postUrl,  // no Telegram source; reuse post URL
+        moreInfoUrl: postUrl,
+        imageUrl,
+      });
+    }
+
+    // Stop if no "next page" navigation exists
+    if (
+      !html.includes("nav-next") &&
+      !html.includes('class="next') &&
+      !html.includes('rel="next"')
+    ) break;
+  }
+
+  return deals;
+}
+
 // ── Multi-channel aggregator ──────────────────────────────────────────────────
 
 async function fetchAllDeals(): Promise<Deal[]> {
@@ -223,7 +340,15 @@ async function fetchAllDeals(): Promise<Deal[]> {
     }
   }
 
-  // Newest first across all channels
+  try {
+    const batch = await scrapeSingpromos(seenUrls);
+    allDeals.push(...batch);
+    console.log(`[deals] singpromos.com: ${batch.length} deals`);
+  } catch (err) {
+    console.warn("[deals] singpromos.com failed:", err);
+  }
+
+  // Newest first across all sources
   return allDeals.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 

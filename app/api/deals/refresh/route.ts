@@ -9,6 +9,6 @@ export async function GET() {
   return NextResponse.json({
     revalidated: true,
     timestamp: new Date().toISOString(),
-    message: "Deals cache cleared — next request will fetch fresh data from @sgfooddeals & @sgdeals",
+    message: "Deals cache cleared — next request will fetch fresh data from @sgfooddeals, @sgdeals & singpromos.com",
   });
 }

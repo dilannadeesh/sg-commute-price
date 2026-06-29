@@ -57,7 +57,7 @@ export default function FoodDealsPage() {
 
       <div className="deals-page">
         <header className="deals-hero">
-          <div className="cpc-hero-eyebrow">Updated daily · sourced from @sgfooddeals &amp; @sgdeals</div>
+          <div className="cpc-hero-eyebrow">Updated daily · sourced from @sgfooddeals, @sgdeals &amp; singpromos.com</div>
           <h1 className="cpc-hero-title" style={{ fontSize: 32 }}>
             Singapore Food Deals Today
           </h1>
