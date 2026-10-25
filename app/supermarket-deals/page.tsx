@@ -11,11 +11,6 @@ const POPULAR_TAGS = [
   "#personalcare", "#household", "#frozen", "#dairy",
 ];
 
-export const metadata = {
-  title: "Supermarket Deals Singapore",
-  description: "Best supermarket deals and grocery promotions in Singapore — NTUC FairPrice, Cold Storage, Giant, Sheng Siong and more. Updated daily.",
-};
-
 export default function SupermarketDealsPage() {
   const [deals, setDeals]           = useState<Deal[]>([]);
   const [loading, setLoading]       = useState(true);

@@ -15,11 +15,6 @@ const POPULAR_STORES = [
   "Harvey Norman", "Courts", "Best Denki", "Challenger", "Gain City",
 ];
 
-export const metadata = {
-  title: "Electronics Deals Singapore",
-  description: "Best electronics and gadget deals in Singapore — phones, laptops, TVs, headphones and more. Updated daily from Harvey Norman, Courts, Best Denki, Challenger and more.",
-};
-
 export default function ElectronicsDealsPage() {
   const [deals, setDeals]           = useState<Deal[]>([]);
   const [loading, setLoading]       = useState(true);
