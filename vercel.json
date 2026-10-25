@@ -9,6 +9,14 @@
       "schedule": "59 15 * * *"
     },
     {
+      "path": "/api/supermarket-deals/refresh",
+      "schedule": "59 15 * * *"
+    },
+    {
+      "path": "/api/electronics-deals/refresh",
+      "schedule": "59 15 * * *"
+    },
+    {
       "path": "/api/weekend/refresh",
       "schedule": "59 15 * * *"
     }

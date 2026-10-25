@@ -1,846 +1,173 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import NavBar from "@/components/NavBar";
-import type {
-  PlanResponse,
-  ItinerarySlot,
-  TravelLegOptions,
-  SingleLegQuote,
-  FlexarLegQuote,
-  FirstLegMode,
-  LegMode,
-} from "@/lib/types";
-import { SG_AREAS } from "@/lib/quote";
+import DealCard from "@/components/DealCard";
+import AirlineDealCard from "@/components/AirlineDealCard";
+import type { Deal, AirlineDeal } from "@/lib/types";
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const DURATION_OPTIONS = [
-  { label: "2h", value: 2 }, { label: "3h", value: 3 },
-  { label: "4h", value: 4 }, { label: "6h", value: 6 },
-  { label: "Full day", value: 8 },
-];
-
-const MEAL_OPTIONS = [
-  { key: "breakfast", label: "Breakfast", emoji: "🍳" },
-  { key: "brunch",    label: "Brunch",    emoji: "🥞" },
-  { key: "lunch",     label: "Lunch",     emoji: "🍜" },
-  { key: "dinner",    label: "Dinner",    emoji: "🌙" },
-];
-
-const CUISINE_OPTIONS = [
-  { key: "western", label: "Western", emoji: "🍔" },
-  { key: "chinese", label: "Chinese", emoji: "🥢" },
-  { key: "indian",  label: "Indian",  emoji: "🍛" },
-  { key: "malay",   label: "Malay",   emoji: "🥘" },
-];
-
-const ACTIVITY_OPTIONS = [
-  { key: "outdoor", label: "Outdoor",  emoji: "🌿" },
-  { key: "indoor",  label: "Indoor",   emoji: "🏛️" },
-  { key: "museum",  label: "Museum",   emoji: "🎨" },
-  { key: "beach",   label: "Beach",    emoji: "🏖️" },
-  { key: "sports",  label: "Sports",   emoji: "⚽" },
-  { key: "arts",    label: "Arts",     emoji: "🎭" },
-  { key: "hiking",  label: "Hiking",   emoji: "🥾" },
-  { key: "family",  label: "Family",   emoji: "👨‍👩‍👧" },
-];
-
-const KID_AGE_GROUPS = ["0–2", "3–6", "7–12", "13+"];
-
-const LOADING_MESSAGES = [
-  "Checking today's food deals…",
-  "Browsing weekend activities…",
-  "Clustering activities by area…",
-  "Personalising for your group…",
-  "Building your itinerary…",
-  "Almost ready!",
-];
-
-const TIME_OPTIONS: string[] = [];
-for (let h = 6; h <= 22; h++) {
-  for (const m of [0, 30]) {
-    if (h === 22 && m === 30) break;
-    TIME_OPTIONS.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
-  }
-}
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-type Step = "form" | "loading" | "result";
-
-interface FormState {
-  adults: number;
-  kidAges: string[];
-  startAreaId: string;
-  startTime: string;
-  durationHours: number;
-  meals: string[];
-  foodTypes: string[];
-  activities: string[];
-}
-
-// ── Location combobox ─────────────────────────────────────────────────────────
-
-function LocationCombobox({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (id: string) => void;
-}) {
-  const [query, setQuery]    = useState("");
-  const [open, setOpen]      = useState(false);
-  const [highlighted, setHi] = useState(0);
-  const inputRef             = useRef<HTMLInputElement>(null);
-  const selectedArea         = SG_AREAS.find(a => a.id === value);
-
-  const suggestions = useMemo(() => {
-    const q = query.toLowerCase().trim();
-    if (!q) return SG_AREAS.slice(0, 12);
-    return SG_AREAS.filter(a =>
-      a.name.toLowerCase().includes(q) ||
-      a.region.toLowerCase().includes(q) ||
-      a.id.replace(/-/g, " ").includes(q)
-    ).sort((a, b) => {
-      const aS = a.name.toLowerCase().startsWith(q) ? 0 : 1;
-      const bS = b.name.toLowerCase().startsWith(q) ? 0 : 1;
-      return aS - bS;
-    }).slice(0, 10);
-  }, [query]);
-
-  function select(area: typeof SG_AREAS[0]) {
-    onChange(area.id);
-    setQuery(area.name);
-    setOpen(false);
-  }
-
-  function clear() {
-    onChange("");
-    setQuery("");
-    setOpen(false);
-    inputRef.current?.focus();
-  }
-
-  function handleInput(e: React.ChangeEvent<HTMLInputElement>) {
-    setQuery(e.target.value);
-    if (value) onChange("");
-    setOpen(true);
-    setHi(0);
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (!open) { if (e.key === "ArrowDown" || e.key === "Enter") { e.preventDefault(); setOpen(true); } return; }
-    if (e.key === "ArrowDown")  { e.preventDefault(); setHi(h => Math.min(h + 1, suggestions.length - 1)); }
-    else if (e.key === "ArrowUp") { e.preventDefault(); setHi(h => Math.max(h - 1, 0)); }
-    else if (e.key === "Enter")  { e.preventDefault(); if (suggestions[highlighted]) select(suggestions[highlighted]); }
-    else if (e.key === "Escape") { setOpen(false); }
-  }
-
-  const displayValue = selectedArea ? selectedArea.name : query;
-
+function SectionHeader({ title, emoji, href }: { title: string; emoji: string; href: string }) {
   return (
-    <div className="planner-combobox">
-      <div className="planner-combobox-wrap">
-        <span className="planner-combobox-pin">📍</span>
-        <input
-          ref={inputRef}
-          type="text"
-          className="planner-combobox-input"
-          placeholder="Search your area in Singapore…"
-          value={displayValue}
-          autoComplete="off"
-          onChange={handleInput}
-          onFocus={() => setOpen(true)}
-          onBlur={() => setTimeout(() => setOpen(false), 160)}
-          onKeyDown={handleKeyDown}
-        />
-        {(value || query) && (
-          <button type="button" className="planner-combobox-clear" onClick={clear} aria-label="Clear">✕</button>
-        )}
+    <div className="home-section-header">
+      <div className="home-section-title">
+        <span className="home-section-emoji">{emoji}</span>
+        <h2 className="home-section-heading">{title}</h2>
       </div>
-      {open && suggestions.length > 0 && (
-        <ul className="planner-combobox-dropdown" role="listbox">
-          {suggestions.map((area, i) => (
-            <li
-              key={area.id}
-              role="option"
-              aria-selected={area.id === value}
-              className={
-                "planner-combobox-option" +
-                (i === highlighted    ? " is-hi"       : "") +
-                (area.id === value    ? " is-selected" : "")
-              }
-              onMouseDown={() => select(area)}
-              onMouseEnter={() => setHi(i)}
-            >
-              <span className="planner-combobox-name">{area.name}</span>
-              <span className="planner-combobox-region">{area.region}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <Link href={href} className="home-see-all">
+        See all →
+      </Link>
     </div>
   );
 }
 
-// ── Loader ────────────────────────────────────────────────────────────────────
+export default function HomePage() {
+  const [foodDeals, setFoodDeals]               = useState<Deal[]>([]);
+  const [supermarketDeals, setSupermarketDeals] = useState<Deal[]>([]);
+  const [electronicsDeals, setElectronicsDeals] = useState<Deal[]>([]);
+  const [airlineDeals, setAirlineDeals]         = useState<AirlineDeal[]>([]);
 
-function PlannerLoader() {
-  const [msgIdx, setMsgIdx] = useState(0);
+  const [loadingStates, setLoadingStates] = useState({
+    food: true, supermarket: true, electronics: true, airline: true,
+  });
+
   useEffect(() => {
-    const t = setInterval(() => setMsgIdx(i => (i + 1) % LOADING_MESSAGES.length), 700);
-    return () => clearInterval(t);
+    Promise.allSettled([
+      fetch("/api/deals").then(r => r.json()),
+      fetch("/api/supermarket-deals").then(r => r.json()),
+      fetch("/api/electronics-deals").then(r => r.json()),
+      fetch("/api/airline-deals").then(r => r.json()),
+    ]).then(([food, super_, elec, airline]) => {
+      if (food.status === "fulfilled")    setFoodDeals((food.value.deals ?? []).slice(0, 3));
+      if (super_.status === "fulfilled")  setSupermarketDeals((super_.value.deals ?? []).slice(0, 3));
+      if (elec.status === "fulfilled")    setElectronicsDeals((elec.value.deals ?? []).slice(0, 3));
+      if (airline.status === "fulfilled") setAirlineDeals((airline.value.deals ?? []).slice(0, 3));
+      setLoadingStates({ food: false, supermarket: false, electronics: false, airline: false });
+    });
   }, []);
-  return (
-    <div className="planner-loader-wrap">
-      <div className="planner-loader-rings">
-        <div className="planner-ring planner-ring-1" />
-        <div className="planner-ring planner-ring-2" />
-        <div className="planner-ring planner-ring-3" />
-        <span className="planner-loader-icon">🗓️</span>
-      </div>
-      <p className="planner-loader-msg" key={msgIdx}>{LOADING_MESSAGES[msgIdx]}</p>
-      <p className="planner-loader-sub">Fetching real-time Singapore deals &amp; activities</p>
-    </div>
-  );
-}
-
-// ── Transport mode selector ───────────────────────────────────────────────────
-
-const MODE_TABS: { id: FirstLegMode; label: string; icon: string }[] = [
-  { id: "publictransport", label: "Transit", icon: "🚇" },
-  { id: "taxi",            label: "Taxi",    icon: "🚕" },
-  { id: "flexar",          label: "Flexar",  icon: "🚌" },
-  { id: "getgo",           label: "GetGo",   icon: "🚗" },
-];
-
-function TransportModeSelector({
-  opts,
-  selected,
-  onChange,
-}: {
-  opts: TravelLegOptions;
-  selected: FirstLegMode;
-  onChange: (m: FirstLegMode) => void;
-}) {
-  const available = MODE_TABS.filter(t => opts[t.id] !== null);
-  return (
-    <div className="planner-transport-tabs">
-      {available.map(tab => (
-        <button
-          key={tab.id}
-          type="button"
-          className={"planner-transport-tab" + (selected === tab.id ? " is-active" : "")}
-          onClick={() => onChange(tab.id)}
-        >
-          {tab.icon} {tab.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-// ── Travel leg display helpers ────────────────────────────────────────────────
-
-function LegPill({ q, pax }: { q: SingleLegQuote; pax: number }) {
-  const total = q.perPax ? q.price * pax : q.price;
-  return (
-    <div className="planner-travel-leg">
-      <div className="planner-travel-arrow">↓</div>
-      <div className="planner-travel-body">
-        <span className="planner-travel-platform">{q.platformName}</span>
-        <span className="planner-travel-dot">·</span>
-        <span className="planner-travel-time">{q.minutes} min</span>
-        <span className="planner-travel-dot">·</span>
-        <span className="planner-travel-price">
-          S${total.toFixed(2)}
-          {q.perPax && pax > 1 && (
-            <span className="planner-travel-perpax"> ({pax}×S${q.price.toFixed(2)})</span>
-          )}
-        </span>
-        {q.surgeLabel && <span className="planner-travel-surge"> · {q.surgeLabel}</span>}
-      </div>
-    </div>
-  );
-}
-
-function fmtM(metres: number): string {
-  return metres >= 1000 ? `${(metres / 1000).toFixed(1)} km` : `${metres} m`;
-}
-
-function FlexarLegPill({ q }: { q: FlexarLegQuote }) {
-  const driveMin = Math.max(1, q.minutes - q.walkInMin - q.walkOutMin);
-  return (
-    <div className="planner-travel-leg planner-travel-leg-flexar">
-      <div className="planner-travel-arrow">↓</div>
-      <div className="planner-flexar-detail">
-        <div className="planner-flexar-row">
-          <span className="planner-flexar-walk-icon">🚶</span>
-          <span className="planner-flexar-walk-text">
-            Walk {fmtM(q.walkInKm)} to <strong>{q.pickupStationName}</strong>
-            <span className="planner-flexar-walk-min"> ({q.walkInMin} min)</span>
-          </span>
-        </div>
-        <div className="planner-flexar-row planner-flexar-drive-row">
-          <span className="planner-flexar-drive-icon">🚌</span>
-          <span className="planner-flexar-drive-text">
-            <span className="planner-travel-platform">Flexar</span>
-            <span className="planner-travel-dot"> · </span>
-            <span className="planner-travel-time">{driveMin} min drive</span>
-            <span className="planner-travel-dot"> · </span>
-            <span className="planner-travel-price">S${q.price.toFixed(2)}</span>
-          </span>
-        </div>
-        <div className="planner-flexar-row">
-          <span className="planner-flexar-walk-icon">🚶</span>
-          <span className="planner-flexar-walk-text">
-            Walk {fmtM(q.walkOutKm)} from <strong>{q.dropoffStationName}</strong>
-            <span className="planner-flexar-walk-min"> ({q.walkOutMin} min)</span>
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function GetGoIncludedPill() {
-  return (
-    <div className="planner-travel-leg">
-      <div className="planner-travel-arrow">↓</div>
-      <div className="planner-travel-body">
-        <span className="planner-getgo-badge">🚗 GetGo</span>
-        <span className="planner-travel-dot">·</span>
-        <span className="planner-travel-included">Included in GetGo booking</span>
-      </div>
-    </div>
-  );
-}
-
-// Each intermediate/return leg gets its own PT / Taxi / Flexar toggle
-function IntermediateLeg({
-  opts,
-  firstMode,
-  legMode,
-  onLegModeChange,
-  pax,
-}: {
-  opts: TravelLegOptions;
-  firstMode: FirstLegMode;
-  legMode: LegMode;
-  onLegModeChange: (m: LegMode) => void;
-  pax: number;
-}) {
-  // GetGo covers the whole day — no per-leg cost
-  if (firstMode === "getgo") return <GetGoIncludedPill />;
-
-  const availableModes: { id: LegMode; label: string }[] = [];
-  if (opts.publictransport) availableModes.push({ id: "publictransport", label: "🚇 Transit" });
-  if (opts.taxi)            availableModes.push({ id: "taxi",            label: "🚕 Taxi" });
-  if (opts.flexar)          availableModes.push({ id: "flexar",          label: "🚌 Flexar" });
-
-  // If the stored mode isn't available for this leg, fall back gracefully
-  const effectiveMode: LegMode = availableModes.some(m => m.id === legMode)
-    ? legMode
-    : (availableModes[0]?.id ?? "publictransport");
-
-  return (
-    <div>
-      {availableModes.length > 1 && (
-        <div className="planner-leg-toggle">
-          {availableModes.map(m => (
-            <button
-              key={m.id}
-              type="button"
-              className={"planner-leg-btn" + (effectiveMode === m.id ? " is-active" : "")}
-              onClick={() => onLegModeChange(m.id)}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
-      )}
-      {effectiveMode === "publictransport" && opts.publictransport && (
-        <LegPill q={opts.publictransport} pax={pax} />
-      )}
-      {effectiveMode === "taxi" && opts.taxi && (
-        <LegPill q={opts.taxi} pax={pax} />
-      )}
-      {effectiveMode === "flexar" && opts.flexar && (
-        <FlexarLegPill q={opts.flexar} />
-      )}
-    </div>
-  );
-}
-
-// ── Cost helpers ──────────────────────────────────────────────────────────────
-
-function legCost(opts: TravelLegOptions, mode: string, pax: number): number {
-  if (mode === "publictransport" && opts.publictransport) return opts.publictransport.price * pax;
-  if (mode === "taxi"            && opts.taxi)            return opts.taxi.price;
-  if (mode === "flexar"          && opts.flexar)          return opts.flexar.price;
-  if (mode === "getgo"           && opts.getgo)           return opts.getgo.price;
-  // Fallback: cheapest available
-  if (opts.publictransport) return opts.publictransport.price * pax;
-  if (opts.taxi)            return opts.taxi.price;
-  return 0;
-}
-
-// ── Slot card ─────────────────────────────────────────────────────────────────
-
-function SlotCard({ slot }: { slot: ItinerarySlot }) {
-  const isMeal = slot.type === "meal";
-  const [imgFailed, setImgFailed] = useState(false);
-  const MEAL_ICONS: Record<string, string> = { breakfast: "🍳", brunch: "🥞", lunch: "🍜", dinner: "🌙" };
-  const placeholderIcon = isMeal ? (MEAL_ICONS[slot.mealType ?? ""] ?? "🍽️") : "🎯";
-
-  return (
-    <div className={"planner-slot-card" + (isMeal ? " planner-slot-meal" : " planner-slot-activity")}>
-      {slot.imageUrl && !imgFailed ? (
-        <div className="planner-slot-img">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={slot.imageUrl} alt="" loading="lazy" onError={() => setImgFailed(true)} />
-        </div>
-      ) : (
-        <div className="planner-slot-img-placeholder"><span>{placeholderIcon}</span></div>
-      )}
-      <div className="planner-slot-body">
-        <div className="planner-slot-meta">
-          <span className={"planner-slot-type-badge" + (isMeal ? " planner-badge-meal" : " planner-badge-act")}>
-            {isMeal ? (slot.mealType ? slot.mealType.charAt(0).toUpperCase() + slot.mealType.slice(1) : "Meal") : "Activity"}
-          </span>
-          {slot.areaName && <span className="planner-slot-area">📍 {slot.areaName}</span>}
-          {slot.dealBadge && <span className="planner-deal-badge">{slot.dealBadge}</span>}
-          {slot.isRealDeal && <span className="planner-live-badge">Live deal</span>}
-        </div>
-        <p className="planner-slot-title">{slot.title}</p>
-        <p className="planner-slot-excerpt">{slot.excerpt}</p>
-        {slot.tags.filter(t => t !== "#deals").length > 0 && (
-          <div className="planner-slot-tags">
-            {slot.tags.filter(t => t !== "#deals").slice(0, 4).map(t => (
-              <span key={t} className="deal-tag">{t}</span>
-            ))}
-          </div>
-        )}
-        <div className="planner-slot-footer">
-          <span className="planner-slot-cost">~S${slot.estimatedCostPerPax}/pax</span>
-          <div className="planner-slot-actions">
-            {slot.telegramUrl && (
-              <a href={slot.telegramUrl} target="_blank" rel="noopener noreferrer" className="planner-tg-link">Telegram ↗</a>
-            )}
-            <a href={slot.moreInfoUrl} target="_blank" rel="noopener noreferrer" className="deal-card-cta">More info →</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Result ────────────────────────────────────────────────────────────────────
-
-function fmt12h(time24: string): string {
-  const [h, m] = time24.split(":").map(Number);
-  return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
-}
-
-function ItineraryResult({ plan, form, onReset }: { plan: PlanResponse; form: FormState; onReset: () => void }) {
-  const pax = plan.pax;
-  const paxLabel =
-    `${form.adults} adult${form.adults !== 1 ? "s" : ""}` +
-    (form.kidAges.length > 0 ? ` + ${form.kidAges.length} kid${form.kidAges.length !== 1 ? "s" : ""}` : "");
-
-  const [firstMode, setFirstMode] = useState<FirstLegMode>(() => {
-    const d = plan.departureOptions;
-    if (!d) return "publictransport";
-    if (d.publictransport) return "publictransport";
-    if (d.taxi) return "taxi";
-    if (d.flexar) return "flexar";
-    if (d.getgo) return "getgo";
-    return "publictransport";
-  });
-
-  // legModes: key = slot index (string), "return" for return leg; value = LegMode
-  const [legModes, setLegModes] = useState<Record<string, LegMode>>({});
-
-  function getEffectiveLegMode(key: string): LegMode {
-    return legModes[key] ?? "publictransport";
-  }
-  function setLegMode(key: string, m: LegMode) {
-    setLegModes(prev => ({ ...prev, [key]: m }));
-  }
-
-  const transportCost = useMemo(() => {
-    let total = 0;
-    // Departure leg (controlled by firstMode)
-    if (plan.departureOptions) {
-      total += legCost(plan.departureOptions, firstMode, pax);
-    }
-    // GetGo covers the whole day — intermediate legs are included
-    if (firstMode !== "getgo") {
-      plan.itinerary.forEach((slot, i) => {
-        if (!slot.travelAfterOptions) return;
-        total += legCost(slot.travelAfterOptions, getEffectiveLegMode(String(i)), pax);
-      });
-      if (plan.returnOptions) {
-        total += legCost(plan.returnOptions, getEffectiveLegMode("return"), pax);
-      }
-    }
-    return total;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firstMode, legModes, plan, pax]);
-
-  const totalCost = transportCost + plan.totalFoodCost + plan.totalActivitiesCost;
-
-  return (
-    <div className="planner-result-wrap">
-      <div className="planner-result-header">
-        <div>
-          <h2 className="planner-result-title">Your Singapore Day Plan ✨</h2>
-          <p className="planner-result-sub">
-            {paxLabel} · Starting {fmt12h(form.startTime)} · {form.durationHours === 8 ? "Full day" : `${form.durationHours}h`}
-          </p>
-        </div>
-        <button onClick={onReset} className="planner-outline-btn">Plan another day</button>
-      </div>
-
-      {/* Transport mode selector */}
-      {plan.departureOptions && (
-        <div className="planner-transport-selector-wrap">
-          <div className="planner-transport-selector-label">How are you getting around?</div>
-          <TransportModeSelector
-            opts={plan.departureOptions}
-            selected={firstMode}
-            onChange={setFirstMode}
-          />
-        </div>
-      )}
-
-      <div className="planner-timeline">
-
-        {/* Departure from home */}
-        {plan.departureOptions && (
-          <div className="planner-timeline-row planner-travel-row">
-            <div className="planner-time-col">
-              <div className="planner-time-label planner-time-home">🏠</div>
-              <div className="planner-time-line" />
-            </div>
-            <div className="planner-timeline-content">
-              <div className="planner-home-label">Leaving from {plan.startAreaName}</div>
-              {firstMode === "flexar" && plan.departureOptions.flexar ? (
-                <FlexarLegPill q={plan.departureOptions.flexar} />
-              ) : firstMode === "getgo" && plan.departureOptions.getgo ? (
-                <LegPill q={plan.departureOptions.getgo} pax={pax} />
-              ) : firstMode === "taxi" && plan.departureOptions.taxi ? (
-                <LegPill q={plan.departureOptions.taxi} pax={pax} />
-              ) : plan.departureOptions.publictransport ? (
-                <LegPill q={plan.departureOptions.publictransport} pax={pax} />
-              ) : null}
-            </div>
-          </div>
-        )}
-
-        {plan.itinerary.map((slot, i) => (
-          <div key={i}>
-            <div className="planner-timeline-row">
-              <div className="planner-time-col">
-                <div className="planner-time-label">{fmt12h(slot.time)}</div>
-                {(i < plan.itinerary.length - 1 || slot.travelAfterOptions || plan.returnOptions) && (
-                  <div className="planner-time-line" />
-                )}
-              </div>
-              <div className="planner-timeline-content">
-                <SlotCard slot={slot} />
-              </div>
-            </div>
-            {slot.travelAfterOptions && (
-              <div className="planner-timeline-row planner-travel-row">
-                <div className="planner-time-col">
-                  <div className="planner-time-line" />
-                </div>
-                <div className="planner-timeline-content">
-                  <IntermediateLeg
-                    opts={slot.travelAfterOptions}
-                    firstMode={firstMode}
-                    legMode={getEffectiveLegMode(String(i))}
-                    onLegModeChange={m => setLegMode(String(i), m)}
-                    pax={pax}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-
-        {/* Return home */}
-        {plan.returnOptions && (
-          <div className="planner-timeline-row planner-travel-row">
-            <div className="planner-time-col">
-              <div className="planner-time-label planner-time-home">🏠</div>
-            </div>
-            <div className="planner-timeline-content">
-              <div className="planner-home-label">Back to {plan.startAreaName}</div>
-              <IntermediateLeg
-                opts={plan.returnOptions}
-                firstMode={firstMode}
-                legMode={getEffectiveLegMode("return")}
-                onLegModeChange={m => setLegMode("return", m)}
-                pax={pax}
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* 3-section cost breakdown */}
-      <div className="planner-cost-sections">
-        <div className="planner-cost-section">
-          <span className="planner-cost-section-icon">🚇</span>
-          <span className="planner-cost-section-label">Transport</span>
-          <span className="planner-cost-section-amount">S${transportCost.toFixed(2)}</span>
-        </div>
-        <div className="planner-cost-section">
-          <span className="planner-cost-section-icon">🍜</span>
-          <span className="planner-cost-section-label">Food &amp; Drinks</span>
-          <span className="planner-cost-section-amount">S${plan.totalFoodCost.toFixed(2)}</span>
-        </div>
-        <div className="planner-cost-section">
-          <span className="planner-cost-section-icon">🎯</span>
-          <span className="planner-cost-section-label">Activities &amp; Tickets</span>
-          <span className="planner-cost-section-amount">S${plan.totalActivitiesCost.toFixed(2)}</span>
-        </div>
-        <div className="planner-cost-section planner-cost-total-row">
-          <span className="planner-cost-section-icon">💰</span>
-          <span className="planner-cost-section-label">Total</span>
-          <span className="planner-cost-section-amount planner-cost-total-amount">S${totalCost.toFixed(2)}</span>
-        </div>
-        <div className="planner-cost-sections-sub">
-          for {pax} {pax === 1 ? "person" : "people"} · estimated
-        </div>
-      </div>
-
-      <div className="planner-result-footer">
-        <button onClick={onReset} className="planner-generate-btn">Plan another day 🗓️</button>
-      </div>
-    </div>
-  );
-}
-
-// ── Main Page ─────────────────────────────────────────────────────────────────
-
-export default function PlannerPage() {
-  const [step, setStep] = useState<Step>("form");
-  const [form, setForm] = useState<FormState>({
-    adults: 2,
-    kidAges: [],
-    startAreaId: "",
-    startTime: "10:00",
-    durationHours: 4,
-    meals: ["lunch"],
-    foodTypes: [],
-    activities: [],
-  });
-  const [plan, setPlan]   = useState<PlanResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const withKids = form.kidAges.length > 0;
-
-  function toggleMeal(m: string)       { setForm(f => ({ ...f, meals:     f.meals.includes(m)     ? f.meals.filter(x => x !== m)     : [...f.meals, m] })); }
-  function toggleFoodType(ft: string)  { setForm(f => ({ ...f, foodTypes: f.foodTypes.includes(ft) ? f.foodTypes.filter(x => x !== ft) : [...f.foodTypes, ft] })); }
-  function toggleActivity(a: string)   { setForm(f => ({ ...f, activities: f.activities.includes(a) ? f.activities.filter(x => x !== a) : [...f.activities, a] })); }
-  function toggleKidAge(age: string)   { setForm(f => ({ ...f, kidAges:   f.kidAges.includes(age)  ? f.kidAges.filter(x => x !== age)  : [...f.kidAges, age] })); }
-
-  async function handleGenerate() {
-    if (form.meals.length === 0 && form.activities.length === 0) return;
-    setStep("loading");
-    setError(null);
-    try {
-      const [res] = await Promise.all([
-        fetch("/api/plan", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
-        }).then(async r => {
-          if (!r.ok) throw new Error("api");
-          return r.json() as Promise<PlanResponse>;
-        }),
-        new Promise<void>(r => setTimeout(r, 2500)),
-      ]);
-      setPlan(res);
-      setStep("result");
-    } catch {
-      setError("Something went wrong. Please try again.");
-      setStep("form");
-    }
-  }
-
-  function reset() { setPlan(null); setStep("form"); setError(null); }
 
   return (
     <div className="cpc-app">
       <NavBar />
 
-      {step === "loading" && <div className="planner-page"><PlannerLoader /></div>}
+      {/* Hero */}
+      <div className="home-hero">
+        <div className="home-hero-inner">
+          <div className="cpc-hero-eyebrow">Singapore&apos;s best deals — updated nightly</div>
+          <h1 className="cpc-hero-title">SGliving Deals</h1>
+          <p className="cpc-hero-sub">
+            Food, supermarket, electronics &amp; airline deals in Singapore —
+            aggregated daily so you never miss a bargain.
+          </p>
 
-      {step === "result" && plan && (
-        <div className="planner-page">
-          <ItineraryResult plan={plan} form={form} onReset={reset} />
-        </div>
-      )}
-
-      {step === "form" && (
-        <div className="planner-page">
-          <header className="planner-hero">
-            <div className="cpc-hero-eyebrow">Free · personalised · real-time deals</div>
-            <h1 className="cpc-hero-title">Plan Your Day<br />in Singapore</h1>
-            <p className="cpc-hero-sub">
-              Tell us who you&apos;re with, when you&apos;re heading out, and what you&apos;d love to do.
-              We&apos;ll build a personalised itinerary with today&apos;s best live deals — including step-by-step travel costs.
-            </p>
-          </header>
-
-          {error && <p className="planner-error">{error}</p>}
-
-          <div className="planner-form-card">
-
-            {/* Who's coming */}
-            <div className="planner-section">
-              <h3 className="planner-section-title">Who&apos;s coming?</h3>
-              <div className="planner-section-row">
-                <div className="planner-row-item">
-                  <span className="planner-field-label">Adults</span>
-                  <Counter value={form.adults} onChange={v => setForm(f => ({ ...f, adults: v }))} />
-                </div>
-                <div className="planner-row-item">
-                  <span className="planner-field-label">With kids?</span>
-                  <button type="button" className={"planner-toggle" + (withKids ? " is-active" : "")}
-                    onClick={() => setForm(f => ({ ...f, kidAges: withKids ? [] : ["7–12"] }))}>
-                    {withKids ? "Yes ✓" : "No"}
-                  </button>
-                </div>
-              </div>
-              {withKids && (
-                <div className="planner-kid-ages">
-                  <span className="planner-field-label">Kids&apos; ages (select all that apply)</span>
-                  <div className="planner-chip-row">
-                    {KID_AGE_GROUPS.map(age => (
-                      <button key={age} type="button"
-                        className={"planner-chip" + (form.kidAges.includes(age) ? " is-active" : "")}
-                        onClick={() => toggleKidAge(age)}>
-                        {age} yrs
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Start location */}
-            <div className="planner-section">
-              <h3 className="planner-section-title">Where are you starting from?</h3>
-              <p className="planner-section-hint">We&apos;ll show step-by-step travel costs between every destination.</p>
-              <LocationCombobox
-                value={form.startAreaId}
-                onChange={id => setForm(f => ({ ...f, startAreaId: id }))}
-              />
-            </div>
-
-            {/* Timing */}
-            <div className="planner-section">
-              <h3 className="planner-section-title">When are you heading out?</h3>
-              <div className="planner-section-row planner-timing-row">
-                <div className="planner-row-item">
-                  <span className="planner-field-label">Start time</span>
-                  <select className="planner-select" value={form.startTime}
-                    onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))}>
-                    {TIME_OPTIONS.map(t => {
-                      const [h, m] = t.split(":").map(Number);
-                      return <option key={t} value={t}>{h % 12 || 12}:{String(m).padStart(2, "0")} {h >= 12 ? "PM" : "AM"}</option>;
-                    })}
-                  </select>
-                </div>
-                <div className="planner-row-item planner-duration-item">
-                  <span className="planner-field-label">How long?</span>
-                  <div className="planner-chip-row">
-                    {DURATION_OPTIONS.map(o => (
-                      <button key={o.value} type="button"
-                        className={"planner-chip" + (form.durationHours === o.value ? " is-active" : "")}
-                        onClick={() => setForm(f => ({ ...f, durationHours: o.value }))}>
-                        {o.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Meals */}
-            <div className="planner-section">
-              <h3 className="planner-section-title">What would you like to eat?</h3>
-              <p className="planner-section-hint">We&apos;ll match active food deals and suggest options near your activities.</p>
-              <div className="planner-chip-row">
-                {MEAL_OPTIONS.map(m => (
-                  <button key={m.key} type="button"
-                    className={"planner-chip" + (form.meals.includes(m.key) ? " is-active" : "")}
-                    onClick={() => toggleMeal(m.key)}>
-                    {m.emoji} {m.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Cuisine — shown only when meals selected */}
-            {form.meals.length > 0 && (
-              <div className="planner-section planner-section-sub">
-                <h3 className="planner-section-title">Preferred cuisine?</h3>
-                <p className="planner-section-hint">Optional — leave blank to see all options. Multi-select welcome.</p>
-                <div className="planner-chip-row">
-                  {CUISINE_OPTIONS.map(c => (
-                    <button key={c.key} type="button"
-                      className={"planner-chip" + (form.foodTypes.includes(c.key) ? " is-active" : "")}
-                      onClick={() => toggleFoodType(c.key)}>
-                      {c.emoji} {c.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Activities */}
-            <div className="planner-section planner-section-last">
-              <h3 className="planner-section-title">What type of activities?</h3>
-              <p className="planner-section-hint">Leave blank to discover all types. We&apos;ll cluster nearby destinations to minimise travel.</p>
-              <div className="planner-chip-row">
-                {ACTIVITY_OPTIONS.map(a => (
-                  <button key={a.key} type="button"
-                    className={"planner-chip" + (form.activities.includes(a.key) ? " is-active" : "")}
-                    onClick={() => toggleActivity(a.key)}>
-                    {a.emoji} {a.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="planner-cta-area">
-            <button type="button" className="planner-generate-btn" onClick={handleGenerate}
-              disabled={form.meals.length === 0 && form.activities.length === 0}>
-              Build My Itinerary 🗓️
-            </button>
-            <p className="planner-cta-note">Uses live deals from @sgfooddeals &amp; @sgweekend</p>
+          {/* Category nav cards */}
+          <div className="home-cat-grid">
+            <Link href="/food-deals" className="home-cat-card home-cat-food">
+              <span className="home-cat-emoji">🍔</span>
+              <span className="home-cat-label">Food Deals</span>
+              <span className="home-cat-sub">Restaurants &amp; promos</span>
+            </Link>
+            <Link href="/supermarket-deals" className="home-cat-card home-cat-super">
+              <span className="home-cat-emoji">🛒</span>
+              <span className="home-cat-label">Supermarket</span>
+              <span className="home-cat-sub">FairPrice, Giant &amp; more</span>
+            </Link>
+            <Link href="/electronics-deals" className="home-cat-card home-cat-elec">
+              <span className="home-cat-emoji">📱</span>
+              <span className="home-cat-label">Electronics</span>
+              <span className="home-cat-sub">Phones, laptops &amp; gadgets</span>
+            </Link>
+            <Link href="/airline-deals" className="home-cat-card home-cat-air">
+              <span className="home-cat-emoji">✈️</span>
+              <span className="home-cat-label">Airline Deals</span>
+              <span className="home-cat-sub">Flights from Changi (SIN)</span>
+            </Link>
           </div>
         </div>
-      )}
-    </div>
-  );
-}
+      </div>
 
-// ── Counter ───────────────────────────────────────────────────────────────────
+      {/* Food Deals section */}
+      <section className="home-section">
+        <div className="home-section-inner">
+          <SectionHeader title="Food Deals" emoji="🍔" href="/food-deals" />
+          {loadingStates.food ? (
+            <div className="home-deals-loading">
+              <div className="deals-spinner" /><p>Loading food deals…</p>
+            </div>
+          ) : foodDeals.length > 0 ? (
+            <div className="deals-grid home-preview-grid">
+              {foodDeals.map(deal => <DealCard key={deal.id} deal={deal} />)}
+            </div>
+          ) : (
+            <p className="home-empty">No food deals right now — check back tonight!</p>
+          )}
+        </div>
+      </section>
 
-function Counter({ value, onChange, min = 1, max = 12 }: { value: number; onChange: (v: number) => void; min?: number; max?: number }) {
-  return (
-    <div className="planner-counter">
-      <button type="button" className="planner-counter-btn" onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min}>−</button>
-      <span className="planner-counter-val">{value}</span>
-      <button type="button" className="planner-counter-btn" onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max}>+</button>
+      {/* Supermarket section */}
+      <section className="home-section home-section-alt">
+        <div className="home-section-inner">
+          <SectionHeader title="Supermarket Deals" emoji="🛒" href="/supermarket-deals" />
+          {loadingStates.supermarket ? (
+            <div className="home-deals-loading">
+              <div className="deals-spinner" /><p>Loading supermarket deals…</p>
+            </div>
+          ) : supermarketDeals.length > 0 ? (
+            <div className="deals-grid home-preview-grid">
+              {supermarketDeals.map(deal => <DealCard key={deal.id} deal={deal} />)}
+            </div>
+          ) : (
+            <p className="home-empty">No supermarket deals right now — check back tonight!</p>
+          )}
+        </div>
+      </section>
+
+      {/* Electronics section */}
+      <section className="home-section">
+        <div className="home-section-inner">
+          <SectionHeader title="Electronics Deals" emoji="📱" href="/electronics-deals" />
+          {loadingStates.electronics ? (
+            <div className="home-deals-loading">
+              <div className="deals-spinner" /><p>Loading electronics deals…</p>
+            </div>
+          ) : electronicsDeals.length > 0 ? (
+            <div className="deals-grid home-preview-grid">
+              {electronicsDeals.map(deal => <DealCard key={deal.id} deal={deal} />)}
+            </div>
+          ) : (
+            <p className="home-empty">No electronics deals right now — check back tonight!</p>
+          )}
+        </div>
+      </section>
+
+      {/* Airline Deals section */}
+      <section className="home-section home-section-alt">
+        <div className="home-section-inner">
+          <SectionHeader title="Airline Deals from Singapore" emoji="✈️" href="/airline-deals" />
+          {loadingStates.airline ? (
+            <div className="home-deals-loading">
+              <div className="deals-spinner" /><p>Loading airline deals…</p>
+            </div>
+          ) : airlineDeals.length > 0 ? (
+            <div className="deals-grid home-preview-grid">
+              {airlineDeals.map(deal => <AirlineDealCard key={deal.id} deal={deal} />)}
+            </div>
+          ) : (
+            <p className="home-empty">No airline deals right now — check back tonight!</p>
+          )}
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="home-footer">
+        <p className="home-footer-text">
+          SGliving — Singapore&apos;s daily deals hub · Updated every night at midnight
+        </p>
+        <div className="home-footer-links">
+          <Link href="/weekend" className="home-footer-link">Weekend Activities</Link>
+          <Link href="/commute" className="home-footer-link">Commute Prices</Link>
+        </div>
+      </footer>
     </div>
   );
 }

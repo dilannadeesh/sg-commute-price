@@ -12,11 +12,12 @@ export default function NavBar() {
         <Link href="/" className="cpc-nav-brand">SGliving</Link>
       </div>
       <div className="cpc-nav-tabs">
-        <Link href="/"              className={"cpc-nav-tab" + (pathname === "/"                    ? " is-active" : "")}>Plan My Day</Link>
-        <Link href="/food-deals"    className={"cpc-nav-tab" + (pathname.startsWith("/food-deals")  ? " is-active" : "")}>Food Deals</Link>
-        <Link href="/airline-deals" className={"cpc-nav-tab" + (pathname.startsWith("/airline-deals") ? " is-active" : "")}>Airline Deals</Link>
-        <Link href="/weekend"       className={"cpc-nav-tab" + (pathname.startsWith("/weekend")     ? " is-active" : "")}>Weekend</Link>
-        <Link href="/commute"       className={"cpc-nav-tab" + (pathname.startsWith("/commute")     ? " is-active" : "")}>Commute</Link>
+        <Link href="/"                   className={"cpc-nav-tab" + (pathname === "/"                         ? " is-active" : "")}>Home</Link>
+        <Link href="/food-deals"         className={"cpc-nav-tab" + (pathname.startsWith("/food-deals")       ? " is-active" : "")}>Food Deals</Link>
+        <Link href="/supermarket-deals"  className={"cpc-nav-tab" + (pathname.startsWith("/supermarket-deals")? " is-active" : "")}>Supermarket</Link>
+        <Link href="/electronics-deals"  className={"cpc-nav-tab" + (pathname.startsWith("/electronics-deals")? " is-active" : "")}>Electronics</Link>
+        <Link href="/airline-deals"      className={"cpc-nav-tab" + (pathname.startsWith("/airline-deals")    ? " is-active" : "")}>Airline Deals</Link>
+        <Link href="/weekend"            className={"cpc-nav-tab" + (pathname.startsWith("/weekend")          ? " is-active" : "")}>Weekend</Link>
       </div>
     </nav>
   );
