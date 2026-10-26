@@ -30,6 +30,16 @@ const TAG_TOPIC: Record<string, string> = {
   "#lunch":     "lunch",
   "#dinner":    "dinner",
   "#drinks":    "cocktail",
+  // Supermarket
+  "#grocery":   "grocery-store",
+  "#ntuc":      "ntuc-fairprice",
+  "#fairprice": "ntuc-fairprice",
+  // Electronics
+  "#laptop":    "laptop",
+  "#phone":     "smartphone",
+  "#iphone":    "iphone",
+  "#tv":        "television",
+  "#gaming":    "video-game",
   // Weekend activities
   "#hiking":    "hiking",
   "#beach":     "beach",
@@ -37,17 +47,14 @@ const TAG_TOPIC: Record<string, string> = {
   "#arts":      "art-gallery",
   "#sports":    "sport",
   "#outdoor":   "nature",
-  "#indoor":    "escape-room",
   "#family":    "picnic",
-  "#kids":      "kids-activities",
   "#events":    "festival",
   "#cycling":   "cycling",
-  "#yoga":      "yoga",
-  "#climbing":  "rock-climbing",
 };
 
-// Emoji fallback (last resort, no image at all)
+// Emoji fallback (last resort, always works with no network)
 const TAG_EMOJI: Record<string, string> = {
+  // Food
   "#burger": "🍔", "#pizza": "🍕", "#sushi": "🍣", "#japanese": "🍱",
   "#ramen": "🍜", "#coffee": "☕", "#breakfast": "🥞", "#lunch": "🍽️",
   "#dinner": "🌙", "#delivery": "🛵", "#bento": "🍱", "#drinks": "🧋",
@@ -55,9 +62,26 @@ const TAG_EMOJI: Record<string, string> = {
   "#dessert": "🍨", "#cake": "🎂", "#chinese": "🥢", "#western": "🥩",
   "#indian": "🍛", "#thai": "🍲", "#korean": "🥘", "#malay": "🍛",
   "#hawker": "🏮", "#dineout": "🍴", "#1for1": "2️⃣", "#promo": "🎉",
+  // Supermarket
+  "#grocery": "🛒", "#ntuc": "🛒", "#fairprice": "🛒", "#coldstorage": "🧊",
+  "#giant": "🏪", "#shengsiong": "🏪", "#donki": "🇯🇵", "#guardian": "💊",
+  "#meat": "🥩", "#seafood": "🦐", "#dairy": "🥛", "#frozen": "🧊",
+  // Electronics
+  "#tech": "💻", "#laptop": "💻", "#phone": "📱", "#iphone": "📱",
+  "#samsung": "📱", "#apple": "🍎", "#sony": "🎧", "#tv": "📺",
+  "#gaming": "🎮", "#ps5": "🎮", "#headphones": "🎧", "#tablet": "📱",
+  "#camera": "📷", "#dyson": "💨",
+  // Weekend
   "#outdoor": "🌿", "#indoor": "🏛️", "#hiking": "🥾", "#beach": "🏖️",
   "#sports": "⚽", "#museum": "🖼️", "#arts": "🎨", "#events": "🎭",
   "#family": "👨‍👩‍👧", "#kids": "🧒", "#free": "🎁", "#weekend": "🌤️",
+};
+
+const DEFAULT_EMOJI_BY_CATEGORY: Record<string, string> = {
+  food: "🍴",
+  supermarket: "🛒",
+  electronics: "📱",
+  airline: "✈️",
 };
 
 const GRADIENTS = [
@@ -73,7 +97,7 @@ function getEmoji(tags: string[]): string {
   for (const tag of tags) {
     if (TAG_EMOJI[tag]) return TAG_EMOJI[tag];
   }
-  return "🍴";
+  return "🏷️";
 }
 
 // Pick the best Wikipedia topic slug from the deal's tags
@@ -103,19 +127,27 @@ export default function DealCard({ deal }: Props) {
   const displayTags = deal.tags.filter(t => t !== "#deals").slice(0, 4);
   const fallbackUrl = getFallbackImageUrl(deal.tags);
 
-  // Three-stage image chain:
-  //   1. Telegram CDN photo (from deal.imageUrl)
-  //   2. Wikipedia topic image via proxy (derived from deal tags)
-  //   3. Gradient + emoji placeholder (no network, always works)
-  const [imgSrc, setImgSrc]     = useState<string | null>(deal.imageUrl ?? fallbackUrl);
-  const [allFailed, setAllFailed] = useState(false);
+  // Image loading strategy:
+  //   Stage 1 → deal.imageUrl (Telegram CDN via /api/telegram-image proxy)
+  //   Stage 2 → Wikipedia topic image via /api/destination-image proxy (tag-derived)
+  //   Stage 3 → gradient + emoji placeholder (always works, no network)
+  //
+  // We start at stage 1 if an imageUrl exists, otherwise jump straight to stage 2.
+  // If the imageUrl is a proxy URL (/api/telegram-image?...) and stage 1 fails,
+  // we fall through to stage 2 (Wikipedia). If stage 2 also fails, show placeholder.
+
+  const initialSrc = deal.imageUrl ?? fallbackUrl;
+  const [imgSrc, setImgSrc]       = useState<string | null>(initialSrc);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [allFailed, setAllFailed] = useState(!initialSrc); // skip straight to emoji if no src at all
 
   function handleError() {
-    if (imgSrc === deal.imageUrl && fallbackUrl) {
-      // Stage 1 failed → try stage 2
+    // Stage 1 failed: try stage 2 (Wikipedia fallback) if we haven't yet
+    if (imgSrc !== fallbackUrl && fallbackUrl) {
       setImgSrc(fallbackUrl);
+      setImgLoaded(false);
     } else {
-      // Stage 2 (or stage 1 with no fallback) failed → show placeholder
+      // Stage 2 failed (or no fallback): show gradient + emoji placeholder
       setAllFailed(true);
     }
   }
@@ -128,21 +160,35 @@ export default function DealCard({ deal }: Props) {
       className="deal-card"
       aria-label={deal.excerpt}
     >
-      {imgSrc && !allFailed ? (
-        <div className="deal-card-img">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imgSrc}
-            alt={displayTags[0] ?? "Deal"}
-            loading="lazy"
-            onError={handleError}
-          />
-        </div>
-      ) : (
-        <div className="deal-card-img-placeholder" style={{ background: gradient }}>
-          <span className="deal-card-emoji">{getEmoji(deal.tags)}</span>
-        </div>
-      )}
+      {/* Image area */}
+      <div className="deal-card-img-wrap">
+        {/* Always render the emoji placeholder underneath — visible if image fails or before it loads */}
+        {(!imgSrc || allFailed) ? (
+          <div className="deal-card-img-placeholder" style={{ background: gradient }}>
+            <span className="deal-card-emoji">{getEmoji(deal.tags)}</span>
+          </div>
+        ) : (
+          <>
+            {/* Show gradient behind image while it's loading */}
+            {!imgLoaded && (
+              <div className="deal-card-img-placeholder" style={{ background: gradient }}>
+                <span className="deal-card-emoji">{getEmoji(deal.tags)}</span>
+              </div>
+            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imgSrc}
+              alt={displayTags[0]?.replace("#", "") ?? "Deal"}
+              loading="lazy"
+              decoding="async"
+              onLoad={() => setImgLoaded(true)}
+              onError={handleError}
+              className={`deal-card-img${imgLoaded ? " is-loaded" : ""}`}
+              style={!imgLoaded ? { opacity: 0, position: "absolute", width: "100%", height: "100%" } : {}}
+            />
+          </>
+        )}
+      </div>
 
       <div className="deal-card-body">
         <p className="deal-card-text">{deal.excerpt}</p>
