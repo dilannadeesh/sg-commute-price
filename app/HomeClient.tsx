@@ -111,7 +111,7 @@ export default function HomePage({ lifestyle }: { lifestyle?: React.ReactNode })
             </div>
           ) : foodDeals.length > 0 ? (
             <div className="deals-grid home-preview-grid">
-              {foodDeals.map(deal => <DealCard key={deal.id} deal={deal} />)}
+              {foodDeals.map(deal => <DealCard key={deal.id} deal={deal} category="food" />)}
             </div>
           ) : (
             <p className="home-empty">No food deals right now — check back tonight!</p>
@@ -129,7 +129,7 @@ export default function HomePage({ lifestyle }: { lifestyle?: React.ReactNode })
             </div>
           ) : supermarketDeals.length > 0 ? (
             <div className="deals-grid home-preview-grid">
-              {supermarketDeals.map(deal => <DealCard key={deal.id} deal={deal} />)}
+              {supermarketDeals.map(deal => <DealCard key={deal.id} deal={deal} category="supermarket" />)}
             </div>
           ) : (
             <p className="home-empty">No supermarket deals right now — check back tonight!</p>
@@ -147,7 +147,7 @@ export default function HomePage({ lifestyle }: { lifestyle?: React.ReactNode })
             </div>
           ) : electronicsDeals.length > 0 ? (
             <div className="deals-grid home-preview-grid">
-              {electronicsDeals.map(deal => <DealCard key={deal.id} deal={deal} />)}
+              {electronicsDeals.map(deal => <DealCard key={deal.id} deal={deal} category="electronics" />)}
             </div>
           ) : (
             <p className="home-empty">No electronics deals right now — check back tonight!</p>

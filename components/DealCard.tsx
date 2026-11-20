@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Deal } from "@/lib/types";
+import { dealImageCandidates, type DealCategory } from "@/lib/dealImages";
 
 // Maps deal tags → Wikipedia topic slug (reuses /api/destination-image proxy)
 const TAG_TOPIC: Record<string, string> = {
@@ -120,36 +121,30 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-interface Props { deal: Deal; }
+interface Props { deal: Deal; category?: DealCategory }
 
-export default function DealCard({ deal }: Props) {
+export default function DealCard({ deal, category }: Props) {
   const gradient    = GRADIENTS[deal.id % GRADIENTS.length];
   const displayTags = deal.tags.filter(t => t !== "#deals").slice(0, 4);
-  const fallbackUrl = getFallbackImageUrl(deal.tags);
 
-  // Image loading strategy:
-  //   Stage 1 → deal.imageUrl (Telegram CDN via /api/telegram-image proxy)
-  //   Stage 2 → Wikipedia topic image via /api/destination-image proxy (tag-derived)
-  //   Stage 3 → gradient + emoji placeholder (always works, no network)
-  //
-  // We start at stage 1 if an imageUrl exists, otherwise jump straight to stage 2.
-  // If the imageUrl is a proxy URL (/api/telegram-image?...) and stage 1 fails,
-  // we fall through to stage 2 (Wikipedia). If stage 2 also fails, show placeholder.
-
-  const initialSrc = deal.imageUrl ?? fallbackUrl;
-  const [imgSrc, setImgSrc]       = useState<string | null>(initialSrc);
+  // Image loading strategy — try each source in order until one loads:
+  //   1. deal.imageUrl (the post's own photo, via /api/telegram-image proxy)
+  //   2. legacy tag → Wikipedia topic
+  //   3. a relevant topic photo from the deal's tags/text (e.g. iPhone, TV, beer)
+  //   4. the section photo (supermarket, consumer electronics, food…)
+  //   5. gradient + emoji placeholder (always works, no network)
+  const candidates = Array.from(new Set(
+    [deal.imageUrl, getFallbackImageUrl(deal.tags), ...dealImageCandidates(category, deal.tags, deal.text ?? deal.excerpt)]
+      .filter((u): u is string => !!u),
+  ));
+  const [idx, setIdx]             = useState(0);
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [allFailed, setAllFailed] = useState(!initialSrc); // skip straight to emoji if no src at all
+  const imgSrc    = candidates[idx] ?? null;
+  const allFailed = !imgSrc;
 
   function handleError() {
-    // Stage 1 failed: try stage 2 (Wikipedia fallback) if we haven't yet
-    if (imgSrc !== fallbackUrl && fallbackUrl) {
-      setImgSrc(fallbackUrl);
-      setImgLoaded(false);
-    } else {
-      // Stage 2 failed (or no fallback): show gradient + emoji placeholder
-      setAllFailed(true);
-    }
+    setImgLoaded(false);
+    setIdx(i => i + 1);
   }
 
   return (
@@ -177,8 +172,9 @@ export default function DealCard({ deal }: Props) {
             )}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
+              key={imgSrc}
               src={imgSrc}
-              alt={displayTags[0]?.replace("#", "") ?? "Deal"}
+              alt={deal.excerpt.slice(0, 80)}
               loading="lazy"
               decoding="async"
               onLoad={() => setImgLoaded(true)}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { AirlineDeal } from "@/lib/types";
+import { airlineImageCandidates } from "@/lib/dealImages";
 
 const AIRLINE_EMOJI: Record<string, string> = {
   "singapore airlines": "🇸🇬",
@@ -77,8 +78,11 @@ interface Props { deal: AirlineDeal; }
 export default function AirlineDealCard({ deal }: Props) {
   const emoji    = getEmoji(deal);
   const gradient = GRADIENTS[deal.id % GRADIENTS.length];
-  const [imgFailed, setImgFailed] = useState(false);
-  const showImage = !!deal.imageUrl && !imgFailed;
+  // Destination photo → the airline's aircraft → Changi Airport → emoji placeholder
+  const candidates = airlineImageCandidates(deal.imageUrl, deal.airline);
+  const [idx, setIdx] = useState(0);
+  const imgSrc    = candidates[idx];
+  const showImage = !!imgSrc;
 
   return (
     <a
@@ -92,10 +96,11 @@ export default function AirlineDealCard({ deal }: Props) {
         <div className="deal-card-img-cover">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={deal.imageUrl}
-            alt={deal.destination ? `${deal.destination} tourist attraction` : "Destination"}
+            key={imgSrc}
+            src={imgSrc}
+            alt={deal.destination ? `${deal.destination} — flight deal from Singapore` : `${deal.airline ?? "Flight"} deal from Singapore`}
             loading="lazy"
-            onError={() => setImgFailed(true)}
+            onError={() => setIdx(i => i + 1)}
           />
           <div className="deal-card-img-overlay">
             <div className="airline-route-overlay">

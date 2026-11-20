@@ -151,7 +151,7 @@ export default function FoodDealsPage() {
               </div>
               <div className="deals-grid">
                 {filtered.map(deal => (
-                  <DealCard key={deal.id} deal={deal} />
+                  <DealCard key={deal.id} deal={deal} category="food" />
                 ))}
               </div>
             </>
