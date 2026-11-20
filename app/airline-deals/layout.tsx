@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sgliving.life";
 
 export const metadata: Metadata = {
-  title: "Singapore Airline Deals — Cheap Flights from Changi Airport 2025",
+  title: "Singapore Airline Deals — Cheap Flights from Changi Airport",
   description:
     "Best Singapore airline deals today — flash sales, cheap flights and promo fares from Changi Airport. Scoot, AirAsia, Jetstar, Singapore Airlines, Cathay Pacific and more. Singapore departures only, updated daily.",
   keywords: [
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     "Singapore to Taipei cheap flight",
     "Singapore to Dubai cheap flight",
     "Singapore to Maldives cheap flight",
-    "flight deals Singapore 2025",
+    "flight deals Singapore 2026",
     "SQ promo fare",
     "Scoot free seats",
     "Singapore budget airline deals",
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     "cheap international flights Singapore",
     "SIN airport deals",
     "Changi departures deals",
-    "budget flights Singapore 2025",
+    "budget flights Singapore 2026",
   ],
   openGraph: {
     type:   "website",
@@ -46,14 +46,12 @@ export const metadata: Metadata = {
     description:
       "Daily cheap flight deals departing Singapore — Scoot, AirAsia, Jetstar, SIA and more. Flash sales & promo fares from Changi Airport.",
     siteName: "SGliving",
-    images: [{ url: `${SITE_URL}/og-airline-deals.png`, width: 1200, height: 630, alt: "Singapore Airline Deals — SGliving" }],
   },
   twitter: {
     card:        "summary_large_image",
     site:        "@sgliving",
     title:       "Singapore Airline Deals | SGliving",
     description: "Daily cheap flights from Singapore — flash sales, promo fares and free seat offers from Changi Airport.",
-    images:      [`${SITE_URL}/og-airline-deals.png`],
   },
   alternates: { canonical: `${SITE_URL}/airline-deals` },
   robots: { index: true, follow: true },

@@ -65,7 +65,7 @@ const TAG_EMOJI: Record<string, string> = {
   // Supermarket
   "#grocery": "🛒", "#ntuc": "🛒", "#fairprice": "🛒", "#coldstorage": "🧊",
   "#giant": "🏪", "#shengsiong": "🏪", "#donki": "🇯🇵", "#guardian": "💊",
-  "#meat": "🥩", "#seafood": "🦐", "#dairy": "🥛", "#frozen": "🧊",
+  "#meat": "🥩", "#dairy": "🥛", "#frozen": "🧊",
   // Electronics
   "#tech": "💻", "#laptop": "💻", "#phone": "📱", "#iphone": "📱",
   "#samsung": "📱", "#apple": "🍎", "#sony": "🎧", "#tv": "📺",

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   keywords: [
     "Singapore weekend activities",
     "things to do in Singapore this weekend",
-    "Singapore weekend events 2025",
+    "Singapore weekend events 2026",
     "Singapore outdoor activities",
     "Singapore family activities weekend",
     "Singapore events this weekend",
@@ -36,14 +36,12 @@ export const metadata: Metadata = {
     description:
       "The best Singapore weekend activities, events and deals — outdoor, family, arts, sports and more. Updated daily.",
     siteName: "SGliving",
-    images: [{ url: `${SITE_URL}/og-weekend.png`, width: 1200, height: 630, alt: "Singapore Weekend Activities — SGliving" }],
   },
   twitter: {
     card:        "summary_large_image",
     site:        "@sgliving",
     title:       "Singapore Weekend Activities & Events | SGliving",
     description: "Discover the best things to do in Singapore this weekend — deals, events, outdoor and family activities.",
-    images:      [`${SITE_URL}/og-weekend.png`],
   },
   alternates: { canonical: `${SITE_URL}/weekend` },
   robots: { index: true, follow: true },

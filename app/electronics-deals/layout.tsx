@@ -44,20 +44,11 @@ export const metadata: Metadata = {
     title:    "Singapore Electronics Deals Today — Harvey Norman, Courts, Best Denki & More",
     description:
       "Latest Singapore electronics promotions — phones, laptops, TVs, headphones and gaming gear from Harvey Norman, Courts, Best Denki, Challenger and Gain City. Updated nightly.",
-    images: [
-      {
-        url:    `${SITE_URL}/og-electronics-deals.png`,
-        width:  1200,
-        height: 630,
-        alt:    "Singapore Electronics Deals — SGliving",
-      },
-    ],
   },
   twitter: {
     card:        "summary_large_image",
     title:       "Singapore Electronics Deals Today | SGliving",
     description: "Daily tech and gadget deals from Harvey Norman, Courts, Best Denki, Challenger and Gain City. Updated every night.",
-    images:      [`${SITE_URL}/og-electronics-deals.png`],
   },
   alternates: { canonical: `${SITE_URL}/electronics-deals` },
   robots: { index: true, follow: true },

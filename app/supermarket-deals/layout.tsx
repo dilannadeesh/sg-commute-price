@@ -38,20 +38,11 @@ export const metadata: Metadata = {
     title:    "Singapore Supermarket Deals Today — NTUC, Cold Storage, Giant & More",
     description:
       "Daily Singapore supermarket promotions — NTUC FairPrice, Cold Storage, Giant, Sheng Siong, Don Don Donki and Guardian. Updated every night.",
-    images: [
-      {
-        url:    `${SITE_URL}/og-supermarket-deals.png`,
-        width:  1200,
-        height: 630,
-        alt:    "Singapore Supermarket Deals — SGliving",
-      },
-    ],
   },
   twitter: {
     card:        "summary_large_image",
     title:       "Singapore Supermarket Deals Today | SGliving",
     description: "Daily Singapore supermarket promotions — NTUC FairPrice, Cold Storage, Giant, Sheng Siong & more. Updated nightly.",
-    images:      [`${SITE_URL}/og-supermarket-deals.png`],
   },
   alternates: { canonical: `${SITE_URL}/supermarket-deals` },
   robots: { index: true, follow: true },

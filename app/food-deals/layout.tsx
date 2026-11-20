@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     "Browse today's best Singapore food deals — 1-for-1 offers, restaurant promotions, discount codes and hawker specials. Sourced daily from @sgfooddeals. Search by cuisine, filter by category and click through to redeem. Free, no sign-up needed.",
   keywords: [
     "Singapore food deals today",
-    "Singapore food promotions 2025",
+    "Singapore food promotions 2026",
     "1 for 1 Singapore food",
     "Singapore restaurant deals",
     "Singapore food promo code",
@@ -32,18 +32,18 @@ export const metadata: Metadata = {
     type:   "website",
     locale: "en_SG",
     url:    `${SITE_URL}/food-deals`,
+    siteName: "SGliving",
     title:  "Singapore Food Deals Today — Promos, 1-for-1 & Restaurant Offers",
     description:
       "The freshest Singapore food promos, 1-for-1s and discount codes — aggregated daily from Telegram. Search, filter and click to redeem.",
-    images: [{ url: "/og-food-deals.png", width: 1200, height: 630, alt: "Singapore Food Deals — SGliving" }],
   },
   twitter: {
     card:        "summary_large_image",
     title:       "Singapore Food Deals Today | SGliving",
     description: "Daily Singapore restaurant promos, 1-for-1 offers and promo codes — updated every day.",
-    images:      ["/og-food-deals.png"],
   },
-  alternates: { canonical: "/food-deals" },
+  alternates: { canonical: `${SITE_URL}/food-deals` },
+  robots: { index: true, follow: true },
 };
 
 const collectionJsonLd = {
@@ -65,6 +65,46 @@ const collectionJsonLd = {
   },
 };
 
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "SGliving", item: SITE_URL },
+    { "@type": "ListItem", position: 2, name: "Food Deals", item: `${SITE_URL}/food-deals` },
+  ],
+};
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Where do the Singapore food deals come from?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Deals are aggregated from @sgfooddeals on Telegram, a Singapore community channel that shares restaurant promotions, 1-for-1 offers and discount codes. SGliving collects them into one searchable page.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How often are food deals updated?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "The Food Deals page refreshes automatically every night, so you always see the latest Singapore food promotions.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Do I need an account to use the food deals?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "No. SGliving is free with no sign-up — search by cuisine, filter by category and click through to the original promotion to redeem it.",
+      },
+    },
+  ],
+};
+
 export default function FoodDealsLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
@@ -72,6 +112,8 @@ export default function FoodDealsLayout({ children }: { children: React.ReactNod
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
       />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       {children}
     </>
   );

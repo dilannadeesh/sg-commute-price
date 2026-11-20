@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
@@ -86,20 +86,11 @@ export const metadata: Metadata = {
     title:    "SGliving — Singapore Deals Hub: Food, Supermarket, Electronics & Flights",
     description:
       "Singapore's daily deals hub — food promos, supermarket sales, electronics discounts and cheap flights from Changi, all aggregated and updated every night. Free.",
-    images: [
-      {
-        url:    `${SITE_URL}/og-image.png`,
-        width:  1200,
-        height: 630,
-        alt:    "SGliving — Singapore Daily Deals Hub",
-      },
-    ],
   },
   twitter: {
     card:        "summary_large_image",
     title:       "SGliving — Singapore Deals Hub",
     description: "Food deals, supermarket promos, electronics sales and cheap flights from Singapore — aggregated daily. Free.",
-    images:      [`${SITE_URL}/og-image.png`],
   },
   robots: {
     index:  true,
@@ -114,10 +105,23 @@ export const metadata: Metadata = {
   },
   alternates: { canonical: SITE_URL },
   category: "shopping",
+  applicationName: "SGliving",
+  manifest: "/manifest.webmanifest",
+  formatDetection: { telephone: false },
+  // Search Console / Bing Webmaster verification — set these env vars in Vercel
+  // (Project → Settings → Environment Variables) and redeploy; no code change needed.
   verification: {
-    // Add Google Search Console verification token here when available:
-    // google: "your-verification-token",
+    ...(process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : {}),
+    ...(process.env.BING_SITE_VERIFICATION
+      ? { other: { "msvalidate.01": process.env.BING_SITE_VERIFICATION } }
+      : {}),
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#ff385c",
+  width: "device-width",
+  initialScale: 1,
 };
 
 const orgJsonLd = {
@@ -127,9 +131,9 @@ const orgJsonLd = {
   url: SITE_URL,
   logo: {
     "@type": "ImageObject",
-    url: `${SITE_URL}/og-image.png`,
-    width: 1200,
-    height: 630,
+    url: `${SITE_URL}/logo.png`,
+    width: 512,
+    height: 512,
   },
   description:
     "SGliving is Singapore's daily deals hub — food promotions, supermarket sales, electronics deals and cheap flights from Changi, aggregated every night. Free.",
@@ -147,14 +151,7 @@ const websiteJsonLd = {
   description:
     "Singapore's daily deals hub — food, supermarket, electronics and airline deals, updated every night.",
   inLanguage: "en-SG",
-  potentialAction: {
-    "@type": "SearchAction",
-    target: {
-      "@type": "EntryPoint",
-      urlTemplate: `${SITE_URL}/food-deals?q={search_term_string}`,
-    },
-    "query-input": "required name=search_term_string",
-  },
+  publisher: { "@type": "Organization", name: "SGliving", url: SITE_URL },
 };
 
 const webAppJsonLd = {
@@ -181,60 +178,6 @@ const webAppJsonLd = {
     "Singapore deals, Singapore food deals, supermarket deals Singapore, electronics deals Singapore, cheap flights Singapore, Grab price Singapore",
 };
 
-const faqJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: [
-    {
-      "@type": "Question",
-      name: "What is SGliving?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "SGliving is a free Singapore deals hub that aggregates daily food deals, supermarket promotions, electronics sales and cheap flights from Changi Airport — all updated automatically every night. You can also compare commute prices across Grab, TADA, Gojek, Flexar, GetGo and public transport.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Where can I find the best deals in Singapore today?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "SGliving aggregates Singapore deals across four categories: Food Deals (restaurant promos, 1-for-1s), Supermarket Deals (NTUC FairPrice, Cold Storage, Giant, Sheng Siong), Electronics Deals (Harvey Norman, Courts, Best Denki) and Airline Deals (cheap flights from Changi). Everything is updated nightly and completely free.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Where can I find Singapore food deals today?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "SGliving's Food Deals page aggregates the latest Singapore restaurant promotions, 1-for-1 offers and discount codes — updated daily and searchable by cuisine or category.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Which supermarkets have promotions in Singapore this week?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "SGliving's Supermarket Deals page tracks weekly sales and promotions from NTUC FairPrice, Cold Storage, Giant, Sheng Siong, Don Don Donki and Guardian — updated every night.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "How can I find cheap flights from Singapore?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "SGliving's Airline Deals page shows current flash sales and promo fares departing from Singapore Changi Airport — Scoot, AirAsia, Jetstar, Singapore Airlines and more, updated daily.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "How much does Grab cost in Singapore?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Grab in Singapore starts at around S$3.40 base fare, with S$0.85 per km and S$0.22 per minute. Peak-hour surge can add 1.3× to 1.5× to the fare. Use SGliving's commute comparison to compare Grab against TADA, Gojek and public transport for your route.",
-      },
-    },
-  ],
-};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -243,7 +186,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppJsonLd) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       </head>
       <body className={inter.variable}>
         {children}
