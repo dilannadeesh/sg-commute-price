@@ -20,7 +20,9 @@ export default function NavBar() {
         <Link href="/malls"              className={"cpc-nav-tab" + (pathname.startsWith("/malls")            ? " is-active" : "")}>Malls</Link>
         <Link href="/hotels"             className={"cpc-nav-tab" + (pathname.startsWith("/hotels")           ? " is-active" : "")}>Hotels</Link>
         <Link href="/automobile"         className={"cpc-nav-tab" + (pathname.startsWith("/automobile")       ? " is-active" : "")}>Automobile</Link>
+        <Link href="/coe"                className={"cpc-nav-tab" + (pathname.startsWith("/coe")              ? " is-active" : "")}>COE</Link>
         <Link href="/weekend"            className={"cpc-nav-tab" + (pathname.startsWith("/weekend")          ? " is-active" : "")}>Weekend</Link>
+        <Link href="/guides"             className={"cpc-nav-tab" + (pathname.startsWith("/guides")           ? " is-active" : "")}>Guides</Link>
       </div>
     </nav>
   );

@@ -85,6 +85,12 @@ function extractAirline(text: string): string | undefined {
   return undefined;
 }
 
+const SG_ONLY_CHANNEL = process.env.AIRLINE_CHANNEL_SG_ONLY === "1" || CHANNEL === "sgtravelpromos";
+
+function isFlightDeal(text: string): boolean {
+  return !!extractAirline(text) || /\b(flights?|air ?fares?|fares? from|airlines?)\b/i.test(text);
+}
+
 function isSingaporeDeal(text: string): boolean {
   const upper = text.toUpperCase();
   return (
@@ -132,7 +138,9 @@ async function fetchFromPublicChannel(): Promise<AirlineDeal[]> {
     const rawText   = stripHtml(blockHtml);
 
     // ── Hard filter 1: must be a Singapore departure deal ────────────────────
-    if (!isSingaporeDeal(rawText)) continue;
+    // Singapore-only channels (e.g. @sgtravelpromos) don't repeat "Singapore" in every
+    // post, so there we only require the post to be about flights / fares.
+    if (!(SG_ONLY_CHANNEL ? isFlightDeal(rawText) : isSingaporeDeal(rawText))) continue;
 
     // ── Hard filter 2: must have an external more-info URL ───────────────────
     const externalUrls = extractExternalUrls(blockHtml);

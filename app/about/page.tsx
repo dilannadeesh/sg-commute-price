@@ -27,6 +27,7 @@ export default function AboutPage() {
             <li><Link href="/hotels">Hotels</Link> from budget to 5-star, with typical prices and access tips.</li>
             <li>The latest <Link href="/automobile">COE results and car events</Link>.</li>
             <li>A <Link href="/commute">commute price comparison</Link> for Grab, Gojek, TADA and public transport.</li>
+            <li><Link href="/coe">COE price history</Link> since 2010 and practical <Link href="/guides">Singapore guides</Link>.</li>
           </ul>
         </section>
 
@@ -37,7 +38,7 @@ export default function AboutPage() {
 
         <section className="lx-block">
           <h2>How SGliving is funded</h2>
-          <p>SGliving is free to use and supported by advertising. Ads are clearly separated from our content, and advertisers don&apos;t influence which deals or places we list. See our <Link href="/privacy">Privacy Policy</Link> for how ads and cookies work.</p>
+          <p>SGliving is free to use and supported by advertising. Ads are clearly separated from our content, and advertisers don&apos;t influence which deals or places we list. See our <Link href="/privacy">Privacy Policy</Link> for how ads and cookies work, and our <Link href="/editorial-policy">editorial policy</Link> for how we choose and check what we publish.</p>
         </section>
 
         <section className="lx-block">

@@ -8,6 +8,9 @@ const clip = (s: string, n = 158) => (s.length <= n ? s : s.slice(0, s.lastIndex
 import PlaceImage from "@/components/lifestyle/PlaceImage";
 import { Breadcrumbs, JsonLd, MapEmbed, MallCard, MrtBadge } from "@/components/lifestyle/Cards";
 import { MALLS, getMall, loadMall, estimateMix } from "@/lib/malls";
+import { loadAllHotels, TIERS } from "@/lib/hotels";
+import { nearest, fmtKm } from "@/lib/nearby";
+import { formatDate } from "@/lib/guides";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sgliving.life";
 export const revalidate = 604800;
@@ -37,6 +40,7 @@ export default async function MallPage({ params }: { params: Promise<{ slug: str
   const view = await loadMall(mall);
   const mix = estimateMix(mall, view.storeCount);
   const maxMix = Math.max(...mix.map(m => m.count));
+  const nearHotels = nearest(view.wikiInfo, await loadAllHotels());
   const nearby = await Promise.all(
     MALLS.filter(m => m.region === mall.region && m.slug !== mall.slug).slice(0, 3).map(loadMall),
   );
@@ -130,6 +134,22 @@ export default async function MallPage({ params }: { params: Promise<{ slug: str
             </div>
           </aside>
         </div>
+
+        {nearHotels.length > 0 && (
+          <section className="lx-block">
+            <h2>Hotels near {mall.name}</h2>
+            <ul className="nearby-list">
+              {nearHotels.map(({ item: h, km }) => (
+                <li key={h.slug}>
+                  <Link href={`/hotels/${h.slug}`}>{h.name}</Link>
+                  <span>{TIERS.find(t => t.id === h.tier)?.label.replace(/ hotels$/, "")} · {fmtKm(km)} away · from S${h.priceFrom}/night</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <p className="lx-footnote">Guide last reviewed {formatDate("2026-11-20")} by the <Link href="/editorial-policy">SGliving Editorial Team</Link>. Photo and store count refreshed weekly.</p>
 
         {nearby.length > 0 && (
           <section className="lx-block lx-more">

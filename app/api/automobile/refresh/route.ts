@@ -12,6 +12,8 @@ export async function GET(req: Request) {
   }
   revalidateTag("automobile");
   revalidatePath("/automobile", "layout");
+  revalidatePath("/coe", "layout");
+  revalidatePath("/guides", "layout");
   revalidatePath("/");
   return NextResponse.json({ revalidated: true, section: "automobile", timestamp: new Date().toISOString() });
 }

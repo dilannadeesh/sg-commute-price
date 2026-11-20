@@ -229,7 +229,7 @@ function computeWalk(
   return { km, min };
 }
 
-function priceFor(platform: Platform, km: number, surge: number): number {
+export function priceFor(platform: Platform, km: number, surge: number): number {
   const minutes = (km / platform.speedKmh) * 60;
   let price = platform.base + km * platform.perKm + minutes * platform.perMin;
   if (platform.surgeable) price *= surge;
@@ -237,7 +237,7 @@ function priceFor(platform: Platform, km: number, surge: number): number {
   return price;
 }
 
-function travelMinutes(platform: Platform, km: number): number {
+export function travelMinutes(platform: Platform, km: number): number {
   let minutes = (km / platform.speedKmh) * 60;
   if (platform.id === "publictransport") {
     minutes += 8 + Math.floor(km / 6) * 4;

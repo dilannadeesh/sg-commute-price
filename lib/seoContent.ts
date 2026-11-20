@@ -24,7 +24,7 @@ export const SEO_CONTENT: Record<SeoPageKey, SeoContent> = {
       { href: "/supermarket-deals", label: "Supermarket promotions" },
       { href: "/malls", label: "Shopping malls by region" },
       { href: "/hotels", label: "Hotels by price" },
-      { href: "/automobile", label: "Latest COE results" },
+      { href: "/coe", label: "Latest COE prices" },
       { href: "/commute", label: "Compare ride prices" },
     ],
     faqs: [
@@ -81,7 +81,7 @@ export const SEO_CONTENT: Record<SeoPageKey, SeoContent> = {
       { href: "/electronics-deals", label: "Home appliance sales" },
     ],
     faqs: [
-      { q: "Which Singapore supermarkets are covered?", a: "We track promotions from NTUC FairPrice, Cold Storage, Giant, Sheng Siong, Don Don Donki and Guardian when they're shared publicly, and refresh the list every night." },
+      { q: "Which Singapore supermarkets are covered?", a: "We pick out promotions from NTUC FairPrice, Cold Storage, Giant, Sheng Siong, Don Don Donki, Guardian and other grocery stores from public Singapore deal channels such as GoodLobang, and refresh the list every night." },
       { q: "Which supermarket is cheapest in Singapore?", a: "It depends on what you buy. Sheng Siong and Giant are often cheaper on everyday staples, FairPrice has the widest member promotions, and Cold Storage and Don Don Donki are popular for imported and Japanese products. Comparing weekly promotions is the easiest way to save." },
       { q: "Why don't I see any promotions right now?", a: "If no current promotions are available from our sources, the page shows none rather than outdated offers. Check back after the nightly refresh." },
     ],
@@ -107,7 +107,7 @@ export const SEO_CONTENT: Record<SeoPageKey, SeoContent> = {
       { href: "/airline-deals", label: "Travel deals" },
     ],
     faqs: [
-      { q: "Which electronics stores are covered?", a: "We track public promotions from Harvey Norman, Courts, Best Denki, Challenger and Gain City, plus online sales shared by Singapore deal channels, refreshed every night." },
+      { q: "Where do the electronics deals come from?", a: "Deals are collected from public Singapore tech-deal channels such as SG Tech & Games — covering gadgets, gaming and electronics sales from retailers like Harvey Norman, Courts, Best Denki, Challenger and online stores — and refreshed every night." },
       { q: "When are the biggest electronics sales in Singapore?", a: "The largest sales usually cluster around 9.9, 11.11 and 12.12, year-end holidays, Chinese New Year and the Great Singapore Sale, with retailer weekend sales in between." },
       { q: "How do I find the cheapest iPhone or Samsung price?", a: "Search for the model on this page to see current promotions across retailers, then compare the final price, warranty and any bundled accessories on each retailer's site." },
     ],
@@ -133,6 +133,7 @@ export const SEO_CONTENT: Record<SeoPageKey, SeoContent> = {
       { href: "/commute", label: "Ride prices to the airport" },
     ],
     faqs: [
+      { q: "Where do the flight deals come from?", a: "Deals are collected from public Singapore travel-deal channels such as SG Travel Promos, and every deal links to the airline or booking site. We only show flight and fare promotions." },
       { q: "Which airlines are included?", a: "Promotions from budget carriers such as Scoot, AirAsia and Jetstar, and full-service airlines including Singapore Airlines, Cathay Pacific and Malaysia Airlines, whenever they're shared publicly for Singapore departures." },
       { q: "Are these fares from Singapore only?", a: "Yes. We only show deals departing Singapore Changi Airport (SIN), and prices are shown in Singapore dollars where available." },
       { q: "How often are flight deals updated?", a: "Every night. Deals older than 30 days are removed automatically so you only see recent promotions." },

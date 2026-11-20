@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import NavBar from "@/components/NavBar";
 import { pageMeta } from "@/lib/seo";
 import { CoeTable, EventCard, JsonLd, Breadcrumbs } from "@/components/lifestyle/Cards";
@@ -52,6 +53,12 @@ export default async function AutomobilePage() {
                 </table>
               </details>
             )}
+            <nav className="seo-related" aria-label="COE history">
+              <Link href="/coe" className="lx-chip">COE price history since 2010</Link>
+              <Link href="/coe/cat-a" className="lx-chip">Cat A COE trend</Link>
+              <Link href="/coe/cat-b" className="lx-chip">Cat B COE trend</Link>
+              <Link href="/guides/how-coe-bidding-works" className="lx-chip">How COE bidding works</Link>
+            </nav>
             <p className="lx-footnote">COE bidding runs twice a month and results are released on Wednesdays at 4pm. This page refreshes weekly from LTA&apos;s open data on data.gov.sg.</p>
           </section>
 

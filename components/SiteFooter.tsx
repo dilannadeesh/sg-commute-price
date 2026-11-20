@@ -34,11 +34,28 @@ const COLUMNS: { title: string; links: [string, string][] }[] = [
   {
     title: "Getting around",
     links: [
-      ["/automobile#coe", "Latest COE results"],
+      ["/coe", "COE prices & history"],
       ["/automobile#events", "Car events in Singapore"],
       ["/commute", "Grab vs Gojek vs MRT prices"],
+    ],
+  },
+  {
+    title: "Guides",
+    links: [
+      ["/guides/how-coe-bidding-works", "How COE bidding works"],
+      ["/guides/grab-vs-gojek-vs-tada", "Grab vs Gojek vs TADA"],
+      ["/guides/changi-airport-to-city", "Changi Airport to the city"],
+      ["/guides/biggest-shopping-malls-singapore", "Biggest malls in Singapore"],
+      ["/guides/hotels-near-marina-bay", "Hotels near Marina Bay"],
+    ],
+  },
+  {
+    title: "About",
+    links: [
       ["/about", "About SGliving"],
+      ["/editorial-policy", "Editorial policy"],
       ["/privacy", "Privacy Policy"],
+      ["/guides", "All guides"],
     ],
   },
 ];

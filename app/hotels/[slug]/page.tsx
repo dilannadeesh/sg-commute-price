@@ -8,6 +8,9 @@ const clip = (s: string, n = 158) => (s.length <= n ? s : s.slice(0, s.lastIndex
 import PlaceImage from "@/components/lifestyle/PlaceImage";
 import { Breadcrumbs, JsonLd, MapEmbed, HotelCard, MrtBadge, Stars } from "@/components/lifestyle/Cards";
 import { HOTELS, TIERS, getHotel, loadHotel, tierAverage } from "@/lib/hotels";
+import { loadAllMalls } from "@/lib/malls";
+import { nearest, fmtKm } from "@/lib/nearby";
+import { formatDate } from "@/lib/guides";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sgliving.life";
 export const revalidate = 604800;
@@ -39,6 +42,7 @@ export default async function HotelPage({ params }: { params: Promise<{ slug: st
   if (!hotel) notFound();
   const view = await loadHotel(hotel);
   const tier = TIERS.find(t => t.id === hotel.tier)!;
+  const nearMalls = hotel.multiLocation ? [] : nearest(view.wikiInfo, await loadAllMalls());
   const similar = await Promise.all(HOTELS.filter(h => h.tier === hotel.tier && h.slug !== slug).slice(0, 3).map(loadHotel));
 
   const schema = {
@@ -134,6 +138,22 @@ export default async function HotelPage({ params }: { params: Promise<{ slug: st
             </div>
           </aside>
         </div>
+
+        {nearMalls.length > 0 && (
+          <section className="lx-block">
+            <h2>Shopping malls near {hotel.name}</h2>
+            <ul className="nearby-list">
+              {nearMalls.map(({ item: m, km }) => (
+                <li key={m.slug}>
+                  <Link href={`/malls/${m.slug}`}>{m.name}</Link>
+                  <span>{m.storeCount}+ stores · {fmtKm(km)} away · {m.mrt[0].name} MRT</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <p className="lx-footnote">Rates last reviewed {formatDate("2026-11-20")} by the <Link href="/editorial-policy">SGliving Editorial Team</Link>. Typical rates are estimates — check live prices before booking.</p>
 
         {similar.length > 0 && (
           <section className="lx-block lx-more">
