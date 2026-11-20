@@ -66,16 +66,20 @@ function extractTelegramImage(chunk: string): string | undefined {
 }
 
 // ── Known Singapore supermarket chains ───────────────────────────────────────
-const SUPERMARKET_KEYWORDS = [
-  "fairprice", "ntuc", "cold storage", "giant", "sheng siong", "prime",
-  "don don donki", "donki", "meidi-ya", "market place", "jasons",
-  "cold storage", "unity", "guardian", "watsons", "redmart", "shopee mart",
-  "supermarket", "grocery", "hypermart", "warehouse club", "costco",
-];
+// Whole-word matching only — substring matching let unrelated posts through
+// (e.g. "unity" inside "community", "prime" inside "Amazon Prime").
+const SUPERMARKET_PATTERN = new RegExp(
+  "\\b(" + [
+    "fairprice", "fair price", "ntuc", "cold storage", "giant hypermarket", "giant supermarket",
+    "sheng siong", "don don donki", "donki", "meidi-ya", "jasons deli", "market place", "hao mart",
+    "prime supermarket", "unity pharmacy", "guardian", "watsons", "redmart", "costco",
+    "supermarkets?", "grocer(?:y|ies)", "hypermart", "hypermarket",
+  ].join("|") + ")\\b",
+  "i",
+);
 
 function isSupermarketDeal(text: string): boolean {
-  const lower = text.toLowerCase();
-  return SUPERMARKET_KEYWORDS.some(k => lower.includes(k));
+  return SUPERMARKET_PATTERN.test(text);
 }
 
 // ── Paginated scrape ──────────────────────────────────────────────────────────
@@ -121,7 +125,7 @@ async function fetchFromPublicChannel(): Promise<Deal[]> {
       const blockHtml = textBlockMatch[1];
       const rawText   = stripHtml(blockHtml);
 
-      if (!rawText.toLowerCase().includes("#deals") && !isSupermarketDeal(rawText)) continue;
+      if (!isSupermarketDeal(rawText)) continue;
 
       const externalUrls = extractExternalUrls(blockHtml);
       if (externalUrls.length === 0) continue;

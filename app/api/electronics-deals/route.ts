@@ -80,9 +80,14 @@ const ELECTRONICS_KEYWORDS = [
   "electronics", "gadget", "tech deal",
 ];
 
+// Whole-word matching — substring matching caught "oppo" in "opportunity", "vivo" in "VivoCity", etc.
+const ELECTRONICS_PATTERN = new RegExp(
+  "\\b(" + ELECTRONICS_KEYWORDS.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")s?\\b",
+  "i",
+);
+
 function isElectronicsDeal(text: string): boolean {
-  const lower = text.toLowerCase();
-  return ELECTRONICS_KEYWORDS.some(k => lower.includes(k));
+  return ELECTRONICS_PATTERN.test(text);
 }
 
 // ── Paginated scrape ──────────────────────────────────────────────────────────

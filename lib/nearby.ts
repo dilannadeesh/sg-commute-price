@@ -12,4 +12,4 @@ export function nearest<T extends { wikiInfo: WikiInfo | null }>(from: WikiInfo 
     .slice(0, n);
 }
 
-export const fmtKm = (km: number) => (km < 1 ? `${Math.round(km * 100) * 10} m` : `${km.toFixed(1)} km`);
+export const fmtKm = (km: number) => (km < 0.95 ? `${Math.round(km * 100) * 10} m` : `${km.toFixed(1)} km`);
