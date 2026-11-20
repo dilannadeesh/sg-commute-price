@@ -1,3 +1,4 @@
+import { PROVIDERS } from "@/lib/travel/providers";
 import type { MetadataRoute } from "next";
 import { MALLS } from "@/lib/malls";
 import { HOTELS } from "@/lib/hotels";
@@ -55,6 +56,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.7,
     },
+    { url: `${SITE_URL}/travel`,     lastModified: GUIDES_UPDATED, changeFrequency: "weekly", priority: 0.9 },
+    ...PROVIDERS.map(p => ({ url: `${SITE_URL}/travel/${p.slug}`, lastModified: new Date(p.updated), changeFrequency: "monthly" as const, priority: 0.75 })),
     { url: `${SITE_URL}/malls`,      lastModified: GUIDES_UPDATED, changeFrequency: "weekly", priority: 0.85 },
     { url: `${SITE_URL}/hotels`,     lastModified: GUIDES_UPDATED, changeFrequency: "weekly", priority: 0.85 },
     { url: `${SITE_URL}/automobile`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },

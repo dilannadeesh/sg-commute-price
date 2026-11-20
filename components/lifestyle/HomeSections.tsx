@@ -3,6 +3,7 @@ import { MallCard, CoeTable, EventCard, SectionHead, Stars } from "./Cards";
 import { loadBiggestMalls } from "@/lib/malls";
 import { TIERS, HOTELS, tierAverage } from "@/lib/hotels";
 import { getCoeResults, loadEvents } from "@/lib/automobile";
+import { PROVIDERS } from "@/lib/travel/providers";
 
 const sgd = (n: number) => `S$${n.toLocaleString("en-SG")}`;
 
@@ -11,6 +12,24 @@ export default async function HomeSections() {
   const [malls, coe, events] = await Promise.all([loadBiggestMalls(3), getCoeResults(), loadEvents()]);
   return (
     <>
+      <section className="home-section" id="travel">
+        <div className="home-section-inner">
+          <SectionHead title="Travelling in Singapore" emoji="🚇" href="/travel" sub="Best MRT & bus route and fare for any trip, compared with Grab, Gojek, GetGo and Flexar" />
+          <Link href="/travel" className="tp-guide-cta" style={{ textDecoration: "none" }}>
+            <span>Where are you going? Plan a trip from your current location →</span>
+          </Link>
+          <div className="tp-provider-grid" style={{ marginTop: 14 }}>
+            {PROVIDERS.map(p => (
+              <Link key={p.slug} href={`/travel/${p.slug}`} className="tp-provider-card" style={{ borderTopColor: p.color }}>
+                <span className="tp-kind">{p.kind}</span>
+                <strong>{p.h1}</strong>
+                <span>{p.lede.split(". ")[0]}.</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="home-section" id="malls">
         <div className="home-section-inner">
           <SectionHead title="Biggest Shopping Malls" emoji="🛍️" href="/malls" sub="Singapore's three largest malls by number of stores" />

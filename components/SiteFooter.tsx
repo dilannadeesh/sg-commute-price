@@ -34,6 +34,11 @@ const COLUMNS: { title: string; links: [string, string][] }[] = [
   {
     title: "Getting around",
     links: [
+      ["/travel", "Singapore journey planner"],
+      ["/travel/what-is-grab", "What is Grab?"],
+      ["/travel/what-is-gojek", "What is Gojek?"],
+      ["/travel/what-is-getgo", "What is GetGo?"],
+      ["/travel/what-is-flexar", "What is Flexar?"],
       ["/coe", "COE prices & history"],
       ["/automobile#events", "Car events in Singapore"],
       ["/commute", "Grab vs Gojek vs MRT prices"],

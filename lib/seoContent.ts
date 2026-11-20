@@ -2,7 +2,7 @@
 // related internal links and FAQs. The same FAQ text feeds both the visible FAQ section
 // and the FAQPage structured data, so they always match (a Google requirement).
 
-export type SeoPageKey = "home" | "food" | "supermarket" | "electronics" | "airline" | "weekend" | "commute";
+export type SeoPageKey = "home" | "food" | "supermarket" | "electronics" | "airline" | "weekend" | "commute" | "travel";
 
 export interface SeoContent {
   heading: string;
@@ -26,6 +26,7 @@ export const SEO_CONTENT: Record<SeoPageKey, SeoContent> = {
       { href: "/hotels", label: "Hotels by price" },
       { href: "/coe", label: "Latest COE prices" },
       { href: "/commute", label: "Compare ride prices" },
+      { href: "/travel", label: "Singapore journey planner" },
     ],
     faqs: [
       { q: "What is SGliving?", a: "SGliving is a free Singapore guide that collects daily food deals, supermarket promotions, electronics sales and cheap flights from Changi, alongside guides to shopping malls, hotels, COE results and a ride-price comparison for Grab, Gojek, TADA and public transport." },
@@ -165,6 +166,8 @@ export const SEO_CONTENT: Record<SeoPageKey, SeoContent> = {
       "The fare checker estimates each option for your route in Singapore dollars, including typical peak-hour surge for Grab, Gojek and TADA.",
     ],
     related: [
+      { href: "/travel", label: "Full journey planner" },
+      { href: "/travel/what-is-flexar", label: "What is Flexar?" },
       { href: "/malls", label: "Malls by MRT station" },
       { href: "/hotels", label: "Hotels and how to get there" },
       { href: "/automobile", label: "COE results" },
@@ -173,6 +176,40 @@ export const SEO_CONTENT: Record<SeoPageKey, SeoContent> = {
       { q: "Which ride-hailing app is cheapest in Singapore?", a: "It depends on your route and the time of day — surge pricing changes which app is cheapest. The fare checker estimates Grab, Gojek and TADA side by side for your trip, alongside MRT/bus." },
       { q: "Does the comparison include peak-hour surge pricing?", a: "Yes. Estimates factor in typical peak-hour surge for ride-hailing apps, so morning and evening rush-hour fares reflect what you are likely to pay." },
       { q: "Can I compare car sharing and car rental too?", a: "Yes. The comparison includes Flexar car sharing (with walking time to the nearest station) and GetGo car rental (with round-trip cost), next to ride-hailing and public transport." },
+    ],
+  },
+  travel: {
+    heading: "Getting around Singapore: MRT, bus, Grab, Gojek, GetGo or Flexar?",
+    intro: [
+      "Singapore's MRT and buses are the cheapest way to travel: one distance-based fare covers the whole journey across up to five transfers, and most adult card fares are between S$1.28 and S$2.57. Trains run from roughly 5.30am to midnight, and bus routes fill the gaps between stations.",
+      "Ride-hailing with Grab or Gojek is the quickest door-to-door option and worth it for groups, luggage, late nights or places far from an MRT station — expect to pay more at the morning and evening peaks. Car sharing suits self-drivers: GetGo rents cars by the hour for round trips from car parks near you, while Flexar lets you drive one way between stations in the East, North-East and Central regions.",
+    ],
+    tips: {
+      title: "Tips to pay less",
+      items: [
+        "Tap in with the same card or phone for the whole journey — transfers within 45 minutes are charged as one distance fare.",
+        "Avoid booking rides between 7–10am and 5–8pm on weekdays, when surge pricing is most common.",
+        "Compare Grab and Gojek before you book; promo codes often make one noticeably cheaper.",
+        "For a one-way drive, Flexar is usually cheaper than GetGo, which charges until you return the car.",
+        "Going to or from Changi Airport with bags? A 6-seater ride split between friends can cost less per person than separate trains and taxis.",
+      ],
+    },
+    related: [
+      { href: "/travel/what-is-grab", label: "What is Grab?" },
+      { href: "/travel/what-is-gojek", label: "What is Gojek?" },
+      { href: "/travel/what-is-getgo", label: "What is GetGo?" },
+      { href: "/travel/what-is-flexar", label: "What is Flexar?" },
+      { href: "/guides/changi-airport-to-city", label: "Changi Airport to the city" },
+      { href: "/guides/grab-vs-gojek-vs-tada", label: "Grab vs Gojek vs TADA" },
+      { href: "/commute", label: "Quick fare checker by area" },
+    ],
+    faqs: [
+      { q: "What is the cheapest way to travel in Singapore?", a: "Public transport. MRT, LRT and basic bus journeys are charged one distance-based fare for the whole trip, from S$1.28 to S$2.57 for adults paying by card from 27 December 2025. Ride-hailing usually costs several times more for the same route." },
+      { q: "How much is an MRT ride in Singapore?", a: "Adult card fares from 27 December 2025 start at S$1.28 for journeys up to 3.2 km and rise with distance to a maximum of S$2.57 for journeys over 40.2 km. Bus and train legs in one journey are added together and charged as a single fare." },
+      { q: "Is Grab or Gojek cheaper?", a: "It depends on the time and route. Gojek is often slightly cheaper off-peak, while Grab usually has more drivers and shorter waits. Our planner shows an estimated price range for both on your trip." },
+      { q: "What is the difference between GetGo and Flexar?", a: "GetGo rents cars by the hour and you return the car to where you picked it up, so it suits round trips. Flexar is point-to-point: you pick up a car at one Flexar station and drop it at another, paying by the minute with fuel included." },
+      { q: "How accurate are the prices in this planner?", a: "Public transport fares use the official adult card fare table. Grab, Gojek, GetGo and Flexar prices are estimates from published fees and typical fares, shown as a range. The app shows the exact fare before you book." },
+      { q: "What time do MRT trains start and stop running?", a: "Most MRT and LRT lines run from about 5.30am to around midnight, with exact first and last train times varying by station. Outside those hours, take a taxi, ride-hail or a night bus where available." },
     ],
   },
 };
