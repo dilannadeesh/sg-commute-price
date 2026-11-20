@@ -21,7 +21,7 @@ function SectionHeader({ title, emoji, href }: { title: string; emoji: string; h
   );
 }
 
-export default function HomePage() {
+export default function HomePage({ lifestyle }: { lifestyle?: React.ReactNode }) {
   const [foodDeals, setFoodDeals]               = useState<Deal[]>([]);
   const [supermarketDeals, setSupermarketDeals] = useState<Deal[]>([]);
   const [electronicsDeals, setElectronicsDeals] = useState<Deal[]>([]);
@@ -56,8 +56,8 @@ export default function HomePage() {
           <div className="cpc-hero-eyebrow">Singapore&apos;s best deals — updated nightly</div>
           <h1 className="cpc-hero-title">SGliving Deals</h1>
           <p className="cpc-hero-sub">
-            Food, supermarket, electronics &amp; airline deals in Singapore —
-            aggregated daily so you never miss a bargain.
+            Food, supermarket, electronics &amp; airline deals in Singapore, plus guides to
+            malls, hotels and the car scene — so you never miss a bargain.
           </p>
 
           {/* Category nav cards */}
@@ -81,6 +81,21 @@ export default function HomePage() {
               <span className="home-cat-emoji">✈️</span>
               <span className="home-cat-label">Airline Deals</span>
               <span className="home-cat-sub">Flights from Changi (SIN)</span>
+            </Link>
+            <Link href="/malls" className="home-cat-card home-cat-malls">
+              <span className="home-cat-emoji">🛍️</span>
+              <span className="home-cat-label">Shopping Malls</span>
+              <span className="home-cat-sub">By region &amp; MRT</span>
+            </Link>
+            <Link href="/hotels" className="home-cat-card home-cat-hotels">
+              <span className="home-cat-emoji">🏨</span>
+              <span className="home-cat-label">Hotels</span>
+              <span className="home-cat-sub">Budget to 5-star prices</span>
+            </Link>
+            <Link href="/automobile" className="home-cat-card home-cat-auto">
+              <span className="home-cat-emoji">🚗</span>
+              <span className="home-cat-label">Automobile</span>
+              <span className="home-cat-sub">COE results &amp; car events</span>
             </Link>
           </div>
         </div>
@@ -158,6 +173,9 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Shopping malls, hotels & automobile (server-rendered, refreshed weekly) */}
+      {lifestyle}
+
       {/* Footer */}
       <footer className="home-footer">
         <p className="home-footer-text">
@@ -166,6 +184,9 @@ export default function HomePage() {
         <div className="home-footer-links">
           <Link href="/weekend" className="home-footer-link">Weekend Activities</Link>
           <Link href="/commute" className="home-footer-link">Commute Prices</Link>
+          <Link href="/malls" className="home-footer-link">Shopping Malls</Link>
+          <Link href="/hotels" className="home-footer-link">Hotels</Link>
+          <Link href="/automobile" className="home-footer-link">Automobile</Link>
         </div>
       </footer>
     </div>

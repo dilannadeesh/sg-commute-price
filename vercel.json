@@ -19,6 +19,18 @@
     {
       "path": "/api/weekend/refresh",
       "schedule": "59 15 * * *"
+    },
+    {
+      "path": "/api/malls/refresh",
+      "schedule": "30 16 * * 3"
+    },
+    {
+      "path": "/api/hotels/refresh",
+      "schedule": "30 16 * * 3"
+    },
+    {
+      "path": "/api/automobile/refresh",
+      "schedule": "30 16 * * 3"
     }
   ]
 }

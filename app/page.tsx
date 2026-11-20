@@ -1,4 +1,8 @@
 import HomeClient from "./HomeClient";
+import HomeSections from "@/components/lifestyle/HomeSections";
+
+// Malls / hotels / automobile sections are refreshed weekly by cron.
+export const revalidate = 604800;
 
 // Homepage-only structured data. Kept out of the root layout so other pages
 // don't end up with two FAQPage blocks (Search Console flags duplicates).
@@ -61,7 +65,7 @@ export default function HomePage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <HomeClient />
+      <HomeClient lifestyle={<HomeSections />} />
     </>
   );
 }
