@@ -44,6 +44,9 @@ function extractExternalUrls(html: string): string[] {
 }
 
 function extractTelegramImage(chunk: string): string | undefined {
+  // Telegram renders emoji as tiny background images (telegram.org/img/emoji/…) —
+  // strip them first so an emoji is never mistaken for the post's photo.
+  chunk = chunk.replace(/<i class="emoji"[^>]*>[\s\S]*?<\/i>/g, "").replace(/[^"'(\s]*telegram\.org\/img\/emoji\/[^"')\s]*/g, "");
   let raw: string | undefined;
   const zoom = chunk.match(/data-zoom-src="([^"]+)"/);
   if (zoom) raw = zoom[1];
@@ -70,7 +73,7 @@ function extractTelegramImage(chunk: string): string | undefined {
 // (e.g. "unity" inside "community", "prime" inside "Amazon Prime").
 const SUPERMARKET_PATTERN = new RegExp(
   "\\b(" + [
-    "fairprice", "fair price", "ntuc", "cold storage", "giant hypermarket", "giant supermarket",
+    "fairprice", "fair price", "ntuc fairprice", "cold storage", "giant hypermarket", "giant supermarket",
     "sheng siong", "don don donki", "donki", "meidi-ya", "jasons deli", "market place", "hao mart",
     "prime supermarket", "unity pharmacy", "guardian", "watsons", "redmart", "costco",
     "supermarkets?", "grocer(?:y|ies)", "hypermart", "hypermarket",

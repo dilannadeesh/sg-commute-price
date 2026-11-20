@@ -44,6 +44,9 @@ function extractExternalUrls(html: string): string[] {
 }
 
 function extractTelegramImage(chunk: string): string | undefined {
+  // Telegram renders emoji as tiny background images (telegram.org/img/emoji/…) —
+  // strip them first so an emoji is never mistaken for the post's photo.
+  chunk = chunk.replace(/<i class="emoji"[^>]*>[\s\S]*?<\/i>/g, "").replace(/[^"'(\s]*telegram\.org\/img\/emoji\/[^"')\s]*/g, "");
   let raw: string | undefined;
   const zoom = chunk.match(/data-zoom-src="([^"]+)"/);
   if (zoom) raw = zoom[1];

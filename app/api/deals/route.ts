@@ -47,6 +47,9 @@ function extractExternalUrls(html: string): string[] {
 // Returns a proxy URL (/api/telegram-image?url=...) so the browser
 // never touches Telegram CDN directly — avoids CORS/referrer failures.
 function extractTelegramImage(chunk: string): string | undefined {
+  // Telegram renders emoji as tiny background images (telegram.org/img/emoji/…) —
+  // strip them first so an emoji is never mistaken for the post's photo.
+  chunk = chunk.replace(/<i class="emoji"[^>]*>[\s\S]*?<\/i>/g, "").replace(/[^"'(\s]*telegram\.org\/img\/emoji\/[^"')\s]*/g, "");
   let raw: string | undefined;
 
   // 1. data-zoom-src — full-size original photo
