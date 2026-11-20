@@ -187,6 +187,8 @@ export default function HomePage({ lifestyle }: { lifestyle?: React.ReactNode })
           <Link href="/malls" className="home-footer-link">Shopping Malls</Link>
           <Link href="/hotels" className="home-footer-link">Hotels</Link>
           <Link href="/automobile" className="home-footer-link">Automobile</Link>
+          <Link href="/about" className="home-footer-link">About</Link>
+          <Link href="/privacy" className="home-footer-link">Privacy Policy</Link>
         </div>
       </footer>
     </div>
