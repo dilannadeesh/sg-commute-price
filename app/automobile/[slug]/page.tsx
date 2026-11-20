@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import NavBar from "@/components/NavBar";
+import { pageMeta } from "@/lib/seo";
+
+const clip = (s: string, n = 158) => (s.length <= n ? s : s.slice(0, s.lastIndexOf(" ", n - 1)) + "…");
 import PlaceImage from "@/components/lifestyle/PlaceImage";
 import { Breadcrumbs, JsonLd, MapEmbed, MrtBadge, EventCard } from "@/components/lifestyle/Cards";
 import { EVENTS, getEvent, loadEvent, eventStatus, formatEventDates } from "@/lib/automobile";
@@ -19,17 +22,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!event) return {};
   const view = await loadEvent(event);
   const image = view.keyVisual ?? view.photos[0]?.imageUrl;
-  const title = `${event.name} — Dates, Venue, Tickets & How to Get There`;
-  const description = `${event.short} ${formatEventDates(event)} at ${event.venue}. Admission: ${event.admission}.`;
-  return {
-    title, description,
-    alternates: { canonical: `${SITE_URL}/automobile/${slug}` },
-    openGraph: {
-      type: "website", locale: "en_SG", url: `${SITE_URL}/automobile/${slug}`, siteName: "SGliving", title, description,
-      ...(image ? { images: [{ url: image, alt: event.name }] } : {}),
-    },
-    twitter: { card: "summary_large_image", title: `${event.name} | SGliving`, description },
-  };
+  const title = `${event.name}: Dates, Tickets & Venue`;
+  const description = clip(`${event.name} — ${formatEventDates(event)} at ${event.venue}, Singapore. Admission: ${event.admission}. ${event.short}`);
+  return pageMeta({
+    path: `/automobile/${slug}`, title, description,
+    ...(image ? { image: { url: image, alt: event.name } } : {}),
+  });
 }
 
 export default async function EventPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -43,17 +41,25 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
   const venuePhoto = view.photos[0];
   const others = await Promise.all(EVENTS.filter(e => e.slug !== slug && eventStatus(e) !== "past").slice(0, 3).map(loadEvent));
 
-  const schema = {
+  const priceNum = /free/i.test(event.admission) ? 0 : Number(event.admission.match(/S\$(\d+(?:\.\d+)?)/)?.[1] ?? NaN);
+  const schema = event.datesTba ? null : {
     "@context": "https://schema.org", "@type": "Event", name: event.name, description: event.about.join(" "),
-    ...(event.datesTba ? {} : { startDate: event.start, endDate: event.end }),
+    startDate: `${event.start}T10:00:00+08:00`, endDate: `${event.end}T21:00:00+08:00`,
     eventStatus: "https://schema.org/EventScheduled",
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     location: {
       "@type": "Place", name: event.venue,
       address: { "@type": "PostalAddress", streetAddress: event.address.replace(/, Singapore \d{6}$/, ""), postalCode: event.address.match(/\d{6}$/)?.[0], addressLocality: "Singapore", addressCountry: "SG" },
     },
-    organizer: { "@type": "Organization", name: event.organiser },
-    ...(hero ? { image: [hero] } : {}),
+    organizer: { "@type": "Organization", name: event.organiser, ...(event.officialUrl ? { url: event.officialUrl } : {}) },
+    image: [hero ?? `${SITE_URL}/automobile/opengraph-image`],
+    ...(Number.isFinite(priceNum) ? {
+      offers: {
+        "@type": "Offer", price: priceNum, priceCurrency: "SGD",
+        availability: "https://schema.org/InStock",
+        url: event.officialUrl ?? `${SITE_URL}/automobile/${slug}`,
+      },
+    } : {}),
     ...(event.officialUrl ? { url: event.officialUrl } : {}),
   };
   const crumbs = {
@@ -68,7 +74,7 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
   return (
     <div className="cpc-app">
       <NavBar />
-      <JsonLd data={schema} />
+      {schema && <JsonLd data={schema} />}
       <JsonLd data={crumbs} />
       <article className="lx-detail">
         <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Automobile", href: "/automobile" }, { label: event.name }]} />

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
+import SiteFooter from "@/components/SiteFooter";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -18,84 +19,20 @@ const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT?.trim() || undefin
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "SGliving — Singapore Deals Hub: Food, Supermarket, Electronics & Flights",
+    default: "SGliving: Singapore Deals Today, Malls, Hotels & COE",
     template: "%s | SGliving",
   },
   description:
-    "SGliving is Singapore's daily deals hub. Browse today's best food deals, supermarket promotions, electronics sales and cheap flights from Changi — all in one place. NTUC FairPrice, Cold Storage, Harvey Norman, Scoot, SIA and more. Free, updated every night.",
-  keywords: [
-    // Deals hub — primary
-    "Singapore deals today",
-    "Singapore deals hub",
-    "Singapore promotions today",
-    "best deals in Singapore",
-    "Singapore daily deals",
-    "Singapore deals website",
-    // Food deals
-    "Singapore food deals today",
-    "Singapore restaurant promotions",
-    "1 for 1 Singapore food",
-    "Singapore food promo code",
-    "Singapore dining deals",
-    "best food deals Singapore",
-    "Singapore hawker deals",
-    "Singapore bubble tea deals",
-    "Singapore coffee deals",
-    // Supermarket deals
-    "Singapore supermarket deals today",
-    "NTUC FairPrice promotions",
-    "Cold Storage Singapore deals",
-    "Giant supermarket Singapore promotions",
-    "Sheng Siong promotions",
-    "Don Don Donki Singapore deals",
-    "Singapore grocery deals",
-    "supermarket sale Singapore this week",
-    // Electronics deals
-    "Singapore electronics deals today",
-    "Harvey Norman Singapore promotions",
-    "Courts Singapore sale",
-    "Best Denki Singapore deals",
-    "Challenger Singapore promotions",
-    "iPhone sale Singapore",
-    "Samsung TV sale Singapore",
-    "Singapore laptop deals",
-    "Singapore tech deals",
-    // Airline deals
-    "Singapore airline deals",
-    "cheap flights from Singapore",
-    "Singapore flight deals today",
-    "Changi Airport flight deals",
-    "Scoot promo Singapore",
-    "AirAsia sale Singapore",
-    "Jetstar sale Singapore",
-    "cheap flights SIN",
-    // Commute
-    "Singapore commute price",
-    "Grab price Singapore",
-    "Gojek price Singapore",
-    "Singapore MRT fare calculator",
-    "Grab vs Gojek Singapore",
-    // Brand
-    "SGliving",
-    "sgliving.life",
-  ],
+    "Today's best Singapore deals — food 1-for-1s, supermarket promos, electronics sales and cheap flights from Changi — plus mall, hotel and COE guides.",
   authors:   [{ name: "SGliving", url: SITE_URL }],
   creator:   "SGliving",
   publisher: "SGliving",
   openGraph: {
     type:     "website",
     locale:   "en_SG",
-    url:      SITE_URL,
     siteName: "SGliving",
-    title:    "SGliving — Singapore Deals Hub: Food, Supermarket, Electronics & Flights",
-    description:
-      "Singapore's daily deals hub — food promos, supermarket sales, electronics discounts and cheap flights from Changi, all aggregated and updated every night. Free.",
   },
-  twitter: {
-    card:        "summary_large_image",
-    title:       "SGliving — Singapore Deals Hub",
-    description: "Food deals, supermarket promos, electronics sales and cheap flights from Singapore — aggregated daily. Free.",
-  },
+  twitter: { card: "summary_large_image" },
   robots: {
     index:  true,
     follow: true,
@@ -107,14 +44,19 @@ export const metadata: Metadata = {
       "max-snippet":       -1,
     },
   },
-  alternates: { canonical: SITE_URL },
   category: "shopping",
   applicationName: "SGliving",
   manifest: "/manifest.webmanifest",
   formatDetection: { telephone: false },
   // Search Console / Bing Webmaster verification — set these env vars in Vercel
   // (Project → Settings → Environment Variables) and redeploy; no code change needed.
-  ...(ADSENSE_CLIENT ? { other: { "google-adsense-account": ADSENSE_CLIENT } } : {}),
+  other: {
+    "geo.region": "SG",
+    "geo.placename": "Singapore",
+    "geo.position": "1.3521;103.8198",
+    ICBM: "1.3521, 103.8198",
+    ...(ADSENSE_CLIENT ? { "google-adsense-account": ADSENSE_CLIENT } : {}),
+  },
   verification: {
     ...(process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : {}),
     ...(process.env.BING_SITE_VERIFICATION
@@ -142,6 +84,9 @@ const orgJsonLd = {
   },
   description:
     "SGliving is Singapore's daily deals hub — food promotions, supermarket sales, electronics deals and cheap flights from Changi, aggregated every night. Free.",
+  areaServed: { "@type": "Country", name: "Singapore" },
+  address: { "@type": "PostalAddress", addressCountry: "SG" },
+  knowsAbout: ["Singapore deals", "Singapore shopping malls", "Singapore hotels", "COE prices", "Singapore public transport"],
   sameAs: [
     "https://t.me/sgfooddeals",
     "https://t.me/sgairlinedeals",
@@ -159,29 +104,6 @@ const websiteJsonLd = {
   publisher: { "@type": "Organization", name: "SGliving", url: SITE_URL },
 };
 
-const webAppJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "WebApplication",
-  name: "SGliving",
-  url: SITE_URL,
-  description:
-    "Singapore's daily deals hub — food deals, supermarket promotions, electronics sales and cheap flights, plus commute price comparison.",
-  applicationCategory: "ShoppingApplication",
-  operatingSystem: "Web",
-  inLanguage: "en-SG",
-  offers: { "@type": "Offer", price: "0", priceCurrency: "SGD" },
-  featureList: [
-    "Daily Singapore food deals and restaurant promotions — 1-for-1 offers, promo codes",
-    "Singapore supermarket deals — NTUC FairPrice, Cold Storage, Giant, Sheng Siong, Don Don Donki",
-    "Singapore electronics deals — Harvey Norman, Courts, Best Denki, Challenger, Gain City",
-    "Singapore airline deals — cheap flights from Changi, Scoot, AirAsia, Jetstar, SIA",
-    "Singapore commute price comparison — Grab, TADA, Gojek, Flexar, GetGo, MRT/bus",
-    "Deals updated nightly via automated aggregation",
-    "Search and filter by category, store, tag or keyword",
-  ],
-  keywords:
-    "Singapore deals, Singapore food deals, supermarket deals Singapore, electronics deals Singapore, cheap flights Singapore, Grab price Singapore",
-};
 
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -198,10 +120,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         )}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppJsonLd) }} />
       </head>
       <body className={inter.variable}>
         {children}
+        <SiteFooter />
 
         {/* Google Analytics */}
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-C4SKPLHG5V" strategy="afterInteractive" />

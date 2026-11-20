@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import NavBar from "@/components/NavBar";
+import { pageMeta } from "@/lib/seo";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sgliving.life";
 const CONTACT = process.env.NEXT_PUBLIC_CONTACT_EMAIL;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
+  path: "/privacy",
   title: "Privacy Policy",
-  description: "How SGliving uses cookies, analytics and advertising, and the choices you have.",
-  alternates: { canonical: `${SITE_URL}/privacy` },
-};
+  description: "How SGliving uses cookies, Google Analytics and Google AdSense advertising, and the choices you have — including opting out of personalised ads.",
+});
 
 export default function PrivacyPage() {
   return (

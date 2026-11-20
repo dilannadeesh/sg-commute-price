@@ -1,23 +1,17 @@
 import type { Metadata } from "next";
 import NavBar from "@/components/NavBar";
+import { pageMeta } from "@/lib/seo";
 import { CoeTable, EventCard, JsonLd, Breadcrumbs } from "@/components/lifestyle/Cards";
 import { getCoeResults, loadEvents, formatEventDates } from "@/lib/automobile";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sgliving.life";
 export const revalidate = 604800;
 
-export const metadata: Metadata = {
-  title: "Singapore Automobile — Latest COE Results & Upcoming Car Events",
-  description:
-    "Latest COE bidding results for Categories A to E with change from the previous round, plus upcoming Singapore car events: Singapore Motorshow, car fairs, F1 Singapore Grand Prix and more.",
-  alternates: { canonical: `${SITE_URL}/automobile` },
-  openGraph: {
-    type: "website", locale: "en_SG", url: `${SITE_URL}/automobile`, siteName: "SGliving",
-    title: "Latest COE Results & Singapore Car Events",
-    description: "COE premiums for every category and what's coming up in Singapore's motoring calendar.",
-  },
-  twitter: { card: "summary_large_image", title: "COE Results & Car Events | SGliving" },
-};
+export const metadata: Metadata = pageMeta({
+  path: "/automobile",
+  title: "COE Results Today & Singapore Car Events",
+  description: "Latest COE premiums for Cat A to E with change from the last round, plus upcoming Singapore car events — the Motorshow, car fairs and F1.",
+});
 
 const sgd = (n: number) => `S$${n.toLocaleString("en-SG")}`;
 
@@ -34,7 +28,7 @@ export default async function AutomobilePage() {
       <div className="deals-page">
         <header className="deals-hero">
           <div className="cpc-hero-eyebrow">COE from LTA · events refreshed weekly</div>
-          <h1 className="cpc-hero-title" style={{ fontSize: 32 }}>Singapore automobile</h1>
+          <h1 className="cpc-hero-title" style={{ fontSize: 32 }}>COE Results &amp; Car Events in Singapore</h1>
           <p className="cpc-hero-sub" style={{ maxWidth: 560, margin: "8px auto 0" }}>
             The latest COE premiums and every car show, fair and race worth knowing about.
           </p>

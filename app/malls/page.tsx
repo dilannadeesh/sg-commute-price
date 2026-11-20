@@ -1,23 +1,17 @@
 import type { Metadata } from "next";
 import NavBar from "@/components/NavBar";
+import { pageMeta } from "@/lib/seo";
 import { MallCard, JsonLd, Breadcrumbs } from "@/components/lifestyle/Cards";
 import { REGIONS, loadAllMalls } from "@/lib/malls";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sgliving.life";
 export const revalidate = 604800; // weekly — also forced by /api/malls/refresh
 
-export const metadata: Metadata = {
-  title: "Shopping Malls in Singapore by Region — Store Counts & Nearest MRT",
-  description:
-    "Every major Singapore shopping mall grouped by region — Central, North, North-East, East and West — with store counts, a short guide and the nearest MRT station for easy public transport access.",
-  alternates: { canonical: `${SITE_URL}/malls` },
-  openGraph: {
-    type: "website", locale: "en_SG", url: `${SITE_URL}/malls`, siteName: "SGliving",
-    title: "Shopping Malls in Singapore by Region",
-    description: "Store counts, short guides and nearest MRT stations for Singapore's major malls — grouped by region.",
-  },
-  twitter: { card: "summary_large_image", title: "Shopping Malls in Singapore by Region | SGliving" },
-};
+export const metadata: Metadata = pageMeta({
+  path: "/malls",
+  title: "Shopping Malls in Singapore by Region & MRT",
+  description: "25 Singapore shopping malls by region — Orchard, Marina Bay, Jurong, Tampines and more — with store counts and the nearest MRT station for each.",
+});
 
 export default async function MallsPage() {
   const malls = await loadAllMalls();

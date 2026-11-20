@@ -5,6 +5,9 @@ import { EVENTS } from "@/lib/automobile";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sgliving.life";
 
+// Evergreen guides change when we edit them, not on every build — give Google a real date.
+const GUIDES_UPDATED = new Date("2026-11-20");
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
   return [
@@ -50,13 +53,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.7,
     },
-    { url: `${SITE_URL}/malls`,      lastModified: now, changeFrequency: "weekly", priority: 0.85 },
-    { url: `${SITE_URL}/hotels`,     lastModified: now, changeFrequency: "weekly", priority: 0.85 },
+    { url: `${SITE_URL}/malls`,      lastModified: GUIDES_UPDATED, changeFrequency: "weekly", priority: 0.85 },
+    { url: `${SITE_URL}/hotels`,     lastModified: GUIDES_UPDATED, changeFrequency: "weekly", priority: 0.85 },
     { url: `${SITE_URL}/automobile`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
-    { url: `${SITE_URL}/about`,      lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${SITE_URL}/privacy`,    lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-    ...MALLS.map(m  => ({ url: `${SITE_URL}/malls/${m.slug}`,      lastModified: now, changeFrequency: "weekly" as const, priority: 0.7 })),
-    ...HOTELS.map(h => ({ url: `${SITE_URL}/hotels/${h.slug}`,     lastModified: now, changeFrequency: "weekly" as const, priority: 0.7 })),
+    { url: `${SITE_URL}/about`,      lastModified: GUIDES_UPDATED, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${SITE_URL}/privacy`,    lastModified: GUIDES_UPDATED, changeFrequency: "yearly", priority: 0.3 },
+    ...MALLS.map(m  => ({ url: `${SITE_URL}/malls/${m.slug}`,      lastModified: GUIDES_UPDATED, changeFrequency: "monthly" as const, priority: 0.7 })),
+    ...HOTELS.map(h => ({ url: `${SITE_URL}/hotels/${h.slug}`,     lastModified: GUIDES_UPDATED, changeFrequency: "monthly" as const, priority: 0.7 })),
     ...EVENTS.map(e => ({ url: `${SITE_URL}/automobile/${e.slug}`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.7 })),
   ];
 }

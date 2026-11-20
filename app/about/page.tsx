@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import NavBar from "@/components/NavBar";
+import { pageMeta } from "@/lib/seo";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sgliving.life";
 const CONTACT = process.env.NEXT_PUBLIC_CONTACT_EMAIL;
 
-export const metadata: Metadata = {
-  title: "About SGliving",
-  description: "What SGliving is, where its information comes from and how to get in touch.",
-  alternates: { canonical: `${SITE_URL}/about` },
-};
+export const metadata: Metadata = pageMeta({
+  path: "/about",
+  title: "About Us",
+  description: "SGliving is a free, independent Singapore guide to everyday deals, shopping malls, hotels, COE results and ride prices. Here's where our information comes from.",
+});
 
 export default function AboutPage() {
   return (

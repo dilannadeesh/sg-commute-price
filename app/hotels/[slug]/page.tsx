@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import NavBar from "@/components/NavBar";
+import { pageMeta } from "@/lib/seo";
+
+const clip = (s: string, n = 158) => (s.length <= n ? s : s.slice(0, s.lastIndexOf(" ", n - 1)) + "…");
 import PlaceImage from "@/components/lifestyle/PlaceImage";
 import { Breadcrumbs, JsonLd, MapEmbed, HotelCard, MrtBadge, Stars } from "@/components/lifestyle/Cards";
 import { HOTELS, TIERS, getHotel, loadHotel, tierAverage } from "@/lib/hotels";
@@ -22,17 +25,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!hotel) return {};
   const view = await loadHotel(hotel);
   const tier = TIERS.find(t => t.id === hotel.tier)!;
-  const title = `${hotel.name} — Room Prices, Location & How to Get There`;
-  const description = `${hotel.short} ${tier.label.replace(/s$/, "")} · typical ${sgd(hotel.priceFrom)}–${sgd(hotel.priceTo)} per night. Nearest MRT: ${hotel.mrt[0].name}.`;
-  return {
-    title, description,
-    alternates: { canonical: `${SITE_URL}/hotels/${slug}` },
-    openGraph: {
-      type: "website", locale: "en_SG", url: `${SITE_URL}/hotels/${slug}`, siteName: "SGliving", title, description,
-      ...(view.wikiInfo?.imageUrl ? { images: [{ url: view.wikiInfo.imageUrl, alt: hotel.name }] } : {}),
-    },
-    twitter: { card: "summary_large_image", title: `${hotel.name} | SGliving`, description },
-  };
+  const title = `${hotel.name}: Room Rates & How to Get There`;
+  const description = clip(`${hotel.name}, ${tier.label.replace(/s$/, "").toLowerCase()} in ${hotel.area}, Singapore — typical ${sgd(hotel.priceFrom)}–${sgd(hotel.priceTo)} a night. Nearest MRT: ${hotel.mrt[0].name}. ${hotel.short}`);
+  return pageMeta({
+    path: `/hotels/${slug}`, title, description,
+    ...(view.wikiInfo?.imageUrl ? { image: { url: view.wikiInfo.imageUrl, alt: `${hotel.name}, Singapore` } } : {}),
+  });
 }
 
 export default async function HotelPage({ params }: { params: Promise<{ slug: string }> }) {

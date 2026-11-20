@@ -18,6 +18,19 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  // The production *.vercel.app alias serves an exact copy of the site — send it (and its
+  // link equity) to the real domain so Google only indexes sgliving.life.
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "sg-commute-price.vercel.app" }],
+        destination: "https://sgliving.life/:path*",
+        permanent: true,
+      },
+    ];
+  },
+
   // Ensure that external fetches in API routes can reach Telegram and Wikipedia
   // (Vercel's network policy allows these; listing them here is informational)
   experimental: {},

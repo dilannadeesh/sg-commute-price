@@ -1,4 +1,4 @@
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
 // Called nightly at 11:59 PM SGT (15:59 UTC) by Vercel cron.
@@ -11,6 +11,8 @@ export async function GET(request: Request) {
   }
 
   revalidateTag("supermarket-deals");
+  revalidatePath("/supermarket-deals");
+  revalidatePath("/");
 
   return NextResponse.json({
     revalidated: true,

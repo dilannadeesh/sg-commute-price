@@ -21,17 +21,21 @@ function SectionHeader({ title, emoji, href }: { title: string; emoji: string; h
   );
 }
 
-export default function HomePage({ lifestyle }: { lifestyle?: React.ReactNode }) {
-  const [foodDeals, setFoodDeals]               = useState<Deal[]>([]);
-  const [supermarketDeals, setSupermarketDeals] = useState<Deal[]>([]);
-  const [electronicsDeals, setElectronicsDeals] = useState<Deal[]>([]);
-  const [airlineDeals, setAirlineDeals]         = useState<AirlineDeal[]>([]);
+export interface HomePreviews { food: Deal[]; supermarket: Deal[]; electronics: Deal[]; airline: AirlineDeal[] }
 
+export default function HomePage({ lifestyle, previews }: { lifestyle?: React.ReactNode; previews?: HomePreviews }) {
+  const [foodDeals, setFoodDeals]               = useState<Deal[]>(previews?.food ?? []);
+  const [supermarketDeals, setSupermarketDeals] = useState<Deal[]>(previews?.supermarket ?? []);
+  const [electronicsDeals, setElectronicsDeals] = useState<Deal[]>(previews?.electronics ?? []);
+  const [airlineDeals, setAirlineDeals]         = useState<AirlineDeal[]>(previews?.airline ?? []);
+
+  const ssr = !!previews;
   const [loadingStates, setLoadingStates] = useState({
-    food: true, supermarket: true, electronics: true, airline: true,
+    food: !ssr, supermarket: !ssr, electronics: !ssr, airline: !ssr,
   });
 
   useEffect(() => {
+    if (ssr) return; // server-rendered — no client fetch needed
     Promise.allSettled([
       fetch("/api/deals").then(r => r.json()),
       fetch("/api/supermarket-deals").then(r => r.json()),
@@ -54,7 +58,7 @@ export default function HomePage({ lifestyle }: { lifestyle?: React.ReactNode })
       <div className="home-hero">
         <div className="home-hero-inner">
           <div className="cpc-hero-eyebrow">Singapore&apos;s best deals — updated nightly</div>
-          <h1 className="cpc-hero-title">SGliving Deals</h1>
+          <h1 className="cpc-hero-title">Today&apos;s Best Deals in Singapore</h1>
           <p className="cpc-hero-sub">
             Food, supermarket, electronics &amp; airline deals in Singapore, plus guides to
             malls, hotels and the car scene — so you never miss a bargain.
@@ -176,21 +180,6 @@ export default function HomePage({ lifestyle }: { lifestyle?: React.ReactNode })
       {/* Shopping malls, hotels & automobile (server-rendered, refreshed weekly) */}
       {lifestyle}
 
-      {/* Footer */}
-      <footer className="home-footer">
-        <p className="home-footer-text">
-          SGliving — Singapore&apos;s daily deals hub · Updated every night at midnight
-        </p>
-        <div className="home-footer-links">
-          <Link href="/weekend" className="home-footer-link">Weekend Activities</Link>
-          <Link href="/commute" className="home-footer-link">Commute Prices</Link>
-          <Link href="/malls" className="home-footer-link">Shopping Malls</Link>
-          <Link href="/hotels" className="home-footer-link">Hotels</Link>
-          <Link href="/automobile" className="home-footer-link">Automobile</Link>
-          <Link href="/about" className="home-footer-link">About</Link>
-          <Link href="/privacy" className="home-footer-link">Privacy Policy</Link>
-        </div>
-      </footer>
     </div>
   );
 }

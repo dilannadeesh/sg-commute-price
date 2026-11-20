@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import NavBar from "@/components/NavBar";
+import { pageMeta } from "@/lib/seo";
+
+const clip = (s: string, n = 158) => (s.length <= n ? s : s.slice(0, s.lastIndexOf(" ", n - 1)) + "…");
 import PlaceImage from "@/components/lifestyle/PlaceImage";
 import { Breadcrumbs, JsonLd, MapEmbed, MallCard, MrtBadge } from "@/components/lifestyle/Cards";
 import { MALLS, getMall, loadMall, estimateMix } from "@/lib/malls";
@@ -19,17 +22,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const mall = getMall(slug);
   if (!mall) return {};
   const view = await loadMall(mall);
-  const title = `${mall.name} — Shops, Location & How to Get There by MRT`;
-  const description = `${mall.short} ${view.storeCount}+ stores in ${mall.area}. Nearest MRT: ${mall.mrt[0].name} (${mall.mrt[0].codes}).`;
-  return {
-    title, description,
-    alternates: { canonical: `${SITE_URL}/malls/${slug}` },
-    openGraph: {
-      type: "website", locale: "en_SG", url: `${SITE_URL}/malls/${slug}`, siteName: "SGliving", title, description,
-      ...(view.wikiInfo?.imageUrl ? { images: [{ url: view.wikiInfo.imageUrl, alt: mall.name }] } : {}),
-    },
-    twitter: { card: "summary_large_image", title: `${mall.name} | SGliving`, description },
-  };
+  const title = `${mall.name}: Shops, MRT & Directions`;
+  const description = clip(`${mall.name} in ${mall.area}, Singapore: ${view.storeCount}+ stores, nearest MRT ${mall.mrt[0].name} (${mall.mrt[0].codes}). ${mall.short}`);
+  return pageMeta({
+    path: `/malls/${slug}`, title, description,
+    ...(view.wikiInfo?.imageUrl ? { image: { url: view.wikiInfo.imageUrl, alt: `${mall.name}, Singapore` } } : {}),
+  });
 }
 
 export default async function MallPage({ params }: { params: Promise<{ slug: string }> }) {

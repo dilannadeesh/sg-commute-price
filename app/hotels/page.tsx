@@ -1,23 +1,17 @@
 import type { Metadata } from "next";
 import NavBar from "@/components/NavBar";
+import { pageMeta } from "@/lib/seo";
 import { HotelCard, JsonLd, Breadcrumbs, Stars } from "@/components/lifestyle/Cards";
 import { TIERS, loadAllHotels, tierAverage } from "@/lib/hotels";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sgliving.life";
 export const revalidate = 604800;
 
-export const metadata: Metadata = {
-  title: "Singapore Hotels by Price — Budget, 3-Star, 4-Star & 5-Star Average Rates",
-  description:
-    "Compare Singapore hotels from budget capsules to 5-star icons like Marina Bay Sands and Raffles — typical nightly prices, nearest MRT and how to get there.",
-  alternates: { canonical: `${SITE_URL}/hotels` },
-  openGraph: {
-    type: "website", locale: "en_SG", url: `${SITE_URL}/hotels`, siteName: "SGliving",
-    title: "Singapore Hotels by Price — Budget to 5-Star",
-    description: "Typical nightly prices, nearest MRT and access tips for Singapore hotels in every price range.",
-  },
-  twitter: { card: "summary_large_image", title: "Singapore Hotels by Price | SGliving" },
-};
+export const metadata: Metadata = pageMeta({
+  path: "/hotels",
+  title: "Singapore Hotels by Price: Budget to 5-Star",
+  description: "Typical nightly rates for Singapore hotels from budget capsules to Marina Bay Sands and Raffles, with the nearest MRT and how to get there.",
+});
 
 const sgd = (n: number) => `S$${n.toLocaleString("en-SG")}`;
 
@@ -34,7 +28,7 @@ export default async function HotelsPage() {
       <div className="deals-page">
         <header className="deals-hero">
           <div className="cpc-hero-eyebrow">Refreshed weekly · {hotels.length} hotels from budget to luxury</div>
-          <h1 className="cpc-hero-title" style={{ fontSize: 32 }}>Hotels in Singapore</h1>
+          <h1 className="cpc-hero-title" style={{ fontSize: 32 }}>Singapore Hotels by Price</h1>
           <p className="cpc-hero-sub" style={{ maxWidth: 560, margin: "8px auto 0" }}>
             Typical nightly prices by category, plus the nearest MRT and how to get there.
           </p>

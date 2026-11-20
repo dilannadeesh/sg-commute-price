@@ -1,51 +1,13 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sgliving.life";
 
-export const metadata: Metadata = {
-  title: "Singapore Weekend Activities & Events — Things To Do This Weekend",
-  description:
-    "Discover the best Singapore weekend activities, events and deals — outdoor adventures, family activities, arts & culture, sports and more. Updated daily from @sgweekend. Free, no sign-up needed.",
-  keywords: [
-    "Singapore weekend activities",
-    "things to do in Singapore this weekend",
-    "Singapore weekend events 2026",
-    "Singapore outdoor activities",
-    "Singapore family activities weekend",
-    "Singapore events this weekend",
-    "free things to do Singapore",
-    "Singapore kids activities weekend",
-    "Singapore hiking trails",
-    "Singapore beach activities",
-    "Singapore museum free entry",
-    "Singapore arts events",
-    "Singapore sports activities",
-    "Singapore weekend deals",
-    "Singapore weekend promo",
-    "sg weekend go",
-    "sgweekend",
-    "Singapore weekend guide",
-    "what to do in Singapore weekend",
-    "Singapore activities today",
-  ],
-  openGraph: {
-    type:     "website",
-    locale:   "en_SG",
-    url:      `${SITE_URL}/weekend`,
-    title:    "Singapore Weekend Activities & Events — SGliving",
-    description:
-      "The best Singapore weekend activities, events and deals — outdoor, family, arts, sports and more. Updated daily.",
-    siteName: "SGliving",
-  },
-  twitter: {
-    card:        "summary_large_image",
-    site:        "@sgliving",
-    title:       "Singapore Weekend Activities & Events | SGliving",
-    description: "Discover the best things to do in Singapore this weekend — deals, events, outdoor and family activities.",
-  },
-  alternates: { canonical: `${SITE_URL}/weekend` },
-  robots: { index: true, follow: true },
-};
+export const metadata: Metadata = pageMeta({
+  path: "/weekend",
+  title: "Things to Do in Singapore This Weekend",
+  description: "Weekend events, activities and deals in Singapore — nature trails, beaches, family days out, arts and sports. Updated nightly so you can plan ahead.",
+});
 
 const collectionJsonLd = {
   "@context": "https://schema.org",
@@ -68,34 +30,12 @@ const breadcrumbJsonLd = {
   ],
 };
 
-const faqJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: [
-    {
-      "@type": "Question",
-      name: "Where do Singapore weekend activity listings come from?",
-      acceptedAnswer: { "@type": "Answer", text: "Listings are sourced from @sgweekend on Telegram — a community channel sharing Singapore weekend deals, events and activities. Only posts with a direct booking or info link are shown." },
-    },
-    {
-      "@type": "Question",
-      name: "How often are weekend activity listings updated?",
-      acceptedAnswer: { "@type": "Answer", text: "Listings are refreshed automatically every night at 11:59 PM SGT and cover the past 2 months so you never miss a deal." },
-    },
-    {
-      "@type": "Question",
-      name: "What kinds of activities are listed?",
-      acceptedAnswer: { "@type": "Answer", text: "Outdoor adventures, hiking trails, beach activities, family events, museum visits, arts & culture, sports sessions, and promotional deals for Singapore weekend activities." },
-    },
-  ],
-};
 
 export default function WeekendLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       {children}
     </>
   );

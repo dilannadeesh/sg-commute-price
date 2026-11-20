@@ -209,15 +209,22 @@ const MOCK_DEALS: Deal[] = [
 
 export const revalidate = 86400;
 
+// Sample deals are for local development only — in production an empty list is returned
+// so the page shows an honest "no deals right now" state instead of made-up offers.
+function fallbackPayload() {
+  const sample = process.env.SHOW_SAMPLE_DEALS === "1";
+  return { deals: sample ? MOCK_DEALS : [], updatedAt: new Date().toISOString(), source: sample ? "mock" : "unavailable" };
+}
+
 export async function GET() {
   try {
     const deals = await fetchFromPublicChannel();
     if (deals.length > 0) {
       return NextResponse.json({ deals, updatedAt: new Date().toISOString(), source: "telegram" });
     }
-    return NextResponse.json({ deals: MOCK_DEALS, updatedAt: new Date().toISOString(), source: "mock" });
+    return NextResponse.json({ ...fallbackPayload() });
   } catch (err) {
     console.error("[/api/supermarket-deals] error:", err);
-    return NextResponse.json({ deals: MOCK_DEALS, updatedAt: new Date().toISOString(), source: "mock" });
+    return NextResponse.json({ ...fallbackPayload() });
   }
 }

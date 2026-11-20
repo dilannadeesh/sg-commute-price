@@ -131,7 +131,7 @@ export default function AirlineDealCard({ deal }: Props) {
         <p className="deal-card-text">{deal.excerpt}</p>
 
         <div className="deal-card-footer">
-          <span className="deal-card-time">{timeAgo(deal.date)}</span>
+          <span className="deal-card-time" suppressHydrationWarning>{timeAgo(deal.date)}</span>
           <span className="deal-card-cta">View deal →</span>
         </div>
       </div>

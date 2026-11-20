@@ -198,7 +198,7 @@ export default function DealCard({ deal, category }: Props) {
         )}
 
         <div className="deal-card-footer">
-          <span className="deal-card-time">{timeAgo(deal.date)}</span>
+          <span className="deal-card-time" suppressHydrationWarning>{timeAgo(deal.date)}</span>
           <span className="deal-card-cta">More info →</span>
         </div>
       </div>
