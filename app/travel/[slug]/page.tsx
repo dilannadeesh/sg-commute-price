@@ -6,8 +6,10 @@ import { Breadcrumbs, JsonLd } from "@/components/lifestyle/Cards";
 import { pageMeta, SITE_URL } from "@/lib/seo";
 import { PROVIDERS, getProvider } from "@/lib/travel/providers";
 import { formatDate } from "@/lib/guides";
+import { OffersStrip } from "@/components/travel/Offers";
+import { sgToday } from "@/lib/travel/offers";
 
-export const revalidate = 604800;
+export const revalidate = 86400;
 export const dynamicParams = false;
 
 export function generateStaticParams() {
@@ -88,6 +90,8 @@ export default async function ProviderPage({ params }: { params: Promise<{ slug:
             <div key={f.label} className="lx-fact"><dt className="lx-fact-label">{f.label}</dt><dd className="lx-fact-num tp-fact-val">{f.value}</dd></div>
           ))}
         </dl>
+
+        <OffersStrip asOf={sgToday()} only={p.id} title={`🎁 ${p.name} first-timer deal`} />
 
         <div className="tp-guide-cta">
           <span>How much would {p.name} cost for your trip?</span>

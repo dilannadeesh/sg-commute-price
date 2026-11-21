@@ -6,6 +6,10 @@ import { Breadcrumbs, JsonLd } from "@/components/lifestyle/Cards";
 import { pageMeta, SITE_URL } from "@/lib/seo";
 import { PROVIDERS } from "@/lib/travel/providers";
 import TravelPlanner from "./TravelPlanner";
+import { OffersStrip } from "@/components/travel/Offers";
+import { sgToday } from "@/lib/travel/offers";
+
+export const revalidate = 86400;
 
 export const metadata: Metadata = pageMeta({
   path: "/travel",
@@ -58,6 +62,8 @@ export default function TravelPage() {
         </header>
 
         <TravelPlanner />
+
+        <OffersStrip asOf={sgToday()} title="🎁 New-user deals: Grab, Gojek, GetGo & Flexar" />
 
         <section className="tp-providers" aria-labelledby="tp-providers-h">
           <h2 id="tp-providers-h">Know your options</h2>

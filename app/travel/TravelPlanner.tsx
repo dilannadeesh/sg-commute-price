@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { OfferNudge } from "@/components/travel/Offers";
+import type { ProviderId } from "@/lib/travel/offers";
 
 interface Place { name: string; address: string; lat: number; lng: number }
 interface Leg { mode: "walk" | "bus" | "rail"; line?: string; lineName?: string; color?: string; from: string; to: string; stops?: number; minutes: number; km: number; detail?: string }
@@ -235,6 +237,7 @@ export default function TravelPlanner() {
                     </select>
                   </label>
                 )}
+                {p.available && <OfferNudge provider={p.id as ProviderId} low={p.low} high={p.high} />}
                 {p.note && <p className="tp-note">{p.note}</p>}
                 <Link className="tp-more" href={PROVIDER_PAGE[p.id]}>What is {p.name}? →</Link>
               </article>
