@@ -111,6 +111,11 @@ export default function HomePage({ lifestyle, previews }: { lifestyle?: React.Re
               <span className="home-cat-label">New Driver</span>
               <span className="home-cat-sub">Rules, licence &amp; BTT test</span>
             </Link>
+            <Link href="/black-friday-deals-singapore" className="home-cat-card home-cat-bf">
+              <span className="home-cat-emoji">🛍️</span>
+              <span className="home-cat-label">Black Friday</span>
+              <span className="home-cat-sub">27 Nov sales in one list</span>
+            </Link>
             <Link href="/weekend" className="home-cat-card home-cat-weekend">
               <span className="home-cat-emoji">🎉</span>
               <span className="home-cat-label">This Weekend</span>

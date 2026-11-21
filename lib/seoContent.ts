@@ -2,7 +2,7 @@
 // related internal links and FAQs. The same FAQ text feeds both the visible FAQ section
 // and the FAQPage structured data, so they always match (a Google requirement).
 
-export type SeoPageKey = "home" | "food" | "supermarket" | "electronics" | "airline" | "weekend" | "commute" | "travel" | "newdriver";
+export type SeoPageKey = "home" | "food" | "supermarket" | "electronics" | "airline" | "weekend" | "commute" | "travel" | "newdriver" | "blackfriday";
 
 export interface SeoContent {
   heading: string;
@@ -21,6 +21,7 @@ export const SEO_CONTENT: Record<SeoPageKey, SeoContent> = {
     ],
     related: [
       { href: "/food-deals", label: "Food deals today" },
+      { href: "/black-friday-deals-singapore", label: "Black Friday deals 2026" },
       { href: "/supermarket-deals", label: "Supermarket promotions" },
       { href: "/malls", label: "Shopping malls by region" },
       { href: "/hotels", label: "Hotels by price" },
@@ -104,6 +105,7 @@ export const SEO_CONTENT: Record<SeoPageKey, SeoContent> = {
       ],
     },
     related: [
+      { href: "/black-friday-deals-singapore", label: "Black Friday deals 2026" },
       { href: "/malls", label: "Malls with electronics stores" },
       { href: "/supermarket-deals", label: "Household promotions" },
       { href: "/airline-deals", label: "Travel deals" },
@@ -242,6 +244,38 @@ export const SEO_CONTENT: Record<SeoPageKey, SeoContent> = {
       { q: "How do I pass the BTT?", a: "Study the official Basic Theory of Driving handbook, then practise with timed mock tests. You need 45 out of 50 correct, so aim to score consistently above 90% in practice before booking." },
       { q: "What are P plates in Singapore?", a: "P (probationary) plates — a red triangle on a yellow background — must be displayed by new drivers for their first year. During that year the licence is revoked at 13 demerit points, or 12 from 1 January 2027." },
       { q: "What changed for drivers in Singapore in 2026?", a: "Speeding penalties rose on 1 January 2026, theory and practical test fees rose on 13 March 2026, and Parliament passed lower drink-driving limits and a phone-holding offence in August 2026 (start date to be announced). Stricter demerit point thresholds start on 1 January 2027." },
+    ],
+  },
+
+  blackfriday: {
+    heading: "Black Friday 2026 in Singapore: what to know",
+    intro: [
+      "Black Friday falls on Friday 27 November 2026, followed by Cyber Monday on 30 November. In Singapore the sales rarely stick to one day: many retailers start early in the week and run offers through the weekend, so most of the deals on this page last 3 to 5 days.",
+      "Electronics and appliances usually see the biggest cuts, from chains such as Courts, Harvey Norman, Challenger, Best Denki and Gain City, alongside online marketplaces like Lazada, Shopee and Amazon.sg. Supermarkets, restaurants and airlines join in with their own weekend promotions. Each deal here links to the original post, so you can check the price and terms before you buy.",
+    ],
+    tips: {
+      title: "How to get real savings on Black Friday",
+      items: [
+        "Note today's price on the items you want, so you can tell a real discount from a raised-then-cut price.",
+        "Compare the same model across two or three retailers. Courts, Harvey Norman and Challenger often price-match each other.",
+        "Stack savings: card cashback, retailer member points and marketplace vouchers can often be combined with the sale price.",
+        "Check warranty and delivery terms. Parallel-import electronics may not carry a local warranty.",
+        "If an item isn't discounted much, wait. 12.12 on Saturday 12 December is the next big sale.",
+      ],
+    },
+    related: [
+      { href: "/electronics-deals", label: "Electronics deals today" },
+      { href: "/supermarket-deals", label: "Supermarket promotions" },
+      { href: "/food-deals", label: "Food deals today" },
+      { href: "/airline-deals", label: "Cheap flights from Singapore" },
+      { href: "/malls", label: "Shopping malls by region" },
+    ],
+    faqs: [
+      { q: "When is Black Friday 2026 in Singapore?", a: "Black Friday 2026 is on Friday 27 November, and Cyber Monday is on Monday 30 November. Many Singapore retailers start their promotions a few days earlier and run them through the weekend." },
+      { q: "Which Singapore stores have Black Friday sales?", a: "Electronics and appliance chains such as Courts, Harvey Norman, Challenger, Best Denki and Gain City usually take part, along with online marketplaces like Lazada, Shopee and Amazon.sg, many fashion and beauty brands, and some supermarkets, restaurants and airlines. This page lists the Black Friday promotions posted for each category." },
+      { q: "Is Black Friday or 12.12 better for deals in Singapore?", a: "It depends on what you're buying. Electronics and appliance stores often give their deepest cuts around Black Friday, while marketplaces such as Shopee and Lazada tend to push their biggest vouchers on 11.11 and 12.12. If a price isn't much lower on Black Friday, it can be worth waiting for 12.12." },
+      { q: "How do I know a Black Friday deal is genuine?", a: "Check the item's normal price before the sale, compare the same model at another retailer, and read the terms for limits on stock, outlets or payment methods. Every deal on SGliving links to the original post so you can verify it." },
+      { q: "How often is this page updated?", a: "Every night. New Black Friday and Cyber Monday posts are added automatically, and each category shows its latest deals if no Black Friday posts have appeared yet." },
     ],
   },
 };
