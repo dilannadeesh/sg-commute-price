@@ -61,7 +61,7 @@ export default function HomePage({ lifestyle, previews }: { lifestyle?: React.Re
           <h1 className="cpc-hero-title">Today&apos;s Best Deals in Singapore</h1>
           <p className="cpc-hero-sub">
             Food, supermarket, electronics &amp; airline deals in Singapore, plus guides to
-            malls, hotels and the car scene — so you never miss a bargain.
+            malls, hotels, getting around, driving and weekend plans — so you never miss a bargain.
           </p>
 
           {/* Category nav cards */}
@@ -100,6 +100,21 @@ export default function HomePage({ lifestyle, previews }: { lifestyle?: React.Re
               <span className="home-cat-emoji">🚗</span>
               <span className="home-cat-label">Automobile</span>
               <span className="home-cat-sub">COE results &amp; car events</span>
+            </Link>
+            <Link href="/travel" className="home-cat-card home-cat-travel">
+              <span className="home-cat-emoji">🚇</span>
+              <span className="home-cat-label">Travelling in SG</span>
+              <span className="home-cat-sub">MRT vs Grab, Gojek &amp; more</span>
+            </Link>
+            <Link href="/new-driver" className="home-cat-card home-cat-driver">
+              <span className="home-cat-emoji">🚘</span>
+              <span className="home-cat-label">New Driver</span>
+              <span className="home-cat-sub">Rules, licence &amp; BTT test</span>
+            </Link>
+            <Link href="/weekend" className="home-cat-card home-cat-weekend">
+              <span className="home-cat-emoji">🎉</span>
+              <span className="home-cat-label">This Weekend</span>
+              <span className="home-cat-sub">What to do in Singapore</span>
             </Link>
           </div>
         </div>
