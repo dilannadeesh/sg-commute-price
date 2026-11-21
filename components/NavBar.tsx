@@ -18,6 +18,7 @@ export default function NavBar() {
         <Link href="/electronics-deals"  className={"cpc-nav-tab" + (pathname.startsWith("/electronics-deals")? " is-active" : "")}>Electronics</Link>
         <Link href="/airline-deals"      className={"cpc-nav-tab" + (pathname.startsWith("/airline-deals")    ? " is-active" : "")}>Airline Deals</Link>
         <Link href="/travel"             className={"cpc-nav-tab" + (pathname.startsWith("/travel")           ? " is-active" : "")}>Travel</Link>
+        <Link href="/new-driver"         className={"cpc-nav-tab" + (pathname.startsWith("/new-driver")       ? " is-active" : "")}>New Driver</Link>
         <Link href="/malls"              className={"cpc-nav-tab" + (pathname.startsWith("/malls")            ? " is-active" : "")}>Malls</Link>
         <Link href="/hotels"             className={"cpc-nav-tab" + (pathname.startsWith("/hotels")           ? " is-active" : "")}>Hotels</Link>
         <Link href="/automobile"         className={"cpc-nav-tab" + (pathname.startsWith("/automobile")       ? " is-active" : "")}>Automobile</Link>

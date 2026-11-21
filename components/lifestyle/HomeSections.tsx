@@ -4,6 +4,7 @@ import { loadBiggestMalls } from "@/lib/malls";
 import { TIERS, HOTELS, tierAverage } from "@/lib/hotels";
 import { getCoeResults, loadEvents } from "@/lib/automobile";
 import { PROVIDERS } from "@/lib/travel/providers";
+import { ARTICLES as ND_ARTICLES, BTT_CARD } from "@/lib/newdriver/articles";
 
 const sgd = (n: number) => `S$${n.toLocaleString("en-SG")}`;
 
@@ -29,6 +30,27 @@ export default async function HomeSections() {
           </div>
         </div>
       </section>
+
+      <section className="home-section" id="new-driver">
+        <div className="home-section-inner">
+          <SectionHead title="New driver in Singapore" emoji="🚘" href="/new-driver" sub="Latest rules, licence steps, a free BTT mock exam and practical test tips" />
+          <div className="nd-cards">
+            {[
+              { href: `/new-driver/${ND_ARTICLES[0].slug}`, emoji: ND_ARTICLES[0].emoji, title: ND_ARTICLES[0].card, sub: ND_ARTICLES[0].cardSub },
+              { href: `/new-driver/${ND_ARTICLES[1].slug}`, emoji: ND_ARTICLES[1].emoji, title: ND_ARTICLES[1].card, sub: ND_ARTICLES[1].cardSub },
+              { href: BTT_CARD.href, emoji: BTT_CARD.emoji, title: BTT_CARD.card, sub: BTT_CARD.cardSub },
+              { href: `/new-driver/${ND_ARTICLES[2].slug}`, emoji: ND_ARTICLES[2].emoji, title: ND_ARTICLES[2].card, sub: ND_ARTICLES[2].cardSub },
+            ].map(c => (
+              <Link key={c.href} href={c.href} className={"nd-card" + (c.href === BTT_CARD.href ? " is-hot" : "")}>
+                <span className="nd-card-emoji" aria-hidden>{c.emoji}</span>
+                <strong>{c.title}</strong>
+                <span>{c.sub}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
 
       <section className="home-section" id="malls">
         <div className="home-section-inner">

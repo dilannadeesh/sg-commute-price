@@ -1,3 +1,4 @@
+import { ARTICLES as ND_ARTICLES } from "@/lib/newdriver/articles";
 import { PROVIDERS } from "@/lib/travel/providers";
 import type { MetadataRoute } from "next";
 import { MALLS } from "@/lib/malls";
@@ -56,6 +57,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.7,
     },
+    { url: `${SITE_URL}/new-driver`, lastModified: GUIDES_UPDATED, changeFrequency: "weekly", priority: 0.85 },
+    { url: `${SITE_URL}/new-driver/btt-mock-test`, lastModified: GUIDES_UPDATED, changeFrequency: "monthly", priority: 0.85 },
+    ...ND_ARTICLES.map(a => ({ url: `${SITE_URL}/new-driver/${a.slug}`, lastModified: new Date(a.updated), changeFrequency: "monthly" as const, priority: 0.8 })),
     { url: `${SITE_URL}/travel`,     lastModified: GUIDES_UPDATED, changeFrequency: "weekly", priority: 0.9 },
     ...PROVIDERS.map(p => ({ url: `${SITE_URL}/travel/${p.slug}`, lastModified: new Date(p.updated), changeFrequency: "monthly" as const, priority: 0.75 })),
     { url: `${SITE_URL}/malls`,      lastModified: GUIDES_UPDATED, changeFrequency: "weekly", priority: 0.85 },

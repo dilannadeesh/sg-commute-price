@@ -35,6 +35,11 @@ const COLUMNS: { title: string; links: [string, string][] }[] = [
     title: "Getting around",
     links: [
       ["/travel", "Singapore journey planner"],
+      ["/new-driver", "New driver in Singapore"],
+      ["/new-driver/btt-mock-test", "Free BTT mock exam"],
+      ["/new-driver/singapore-driving-rules", "Latest driving rules"],
+      ["/new-driver/how-to-get-driving-licence-singapore", "How to get a licence"],
+      ["/new-driver/practical-driving-test-tips", "Practical test tips"],
       ["/travel/what-is-grab", "What is Grab?"],
       ["/travel/what-is-gojek", "What is Gojek?"],
       ["/travel/what-is-getgo", "What is GetGo?"],

@@ -2,7 +2,7 @@
 // related internal links and FAQs. The same FAQ text feeds both the visible FAQ section
 // and the FAQPage structured data, so they always match (a Google requirement).
 
-export type SeoPageKey = "home" | "food" | "supermarket" | "electronics" | "airline" | "weekend" | "commute" | "travel";
+export type SeoPageKey = "home" | "food" | "supermarket" | "electronics" | "airline" | "weekend" | "commute" | "travel" | "newdriver";
 
 export interface SeoContent {
   heading: string;
@@ -27,6 +27,7 @@ export const SEO_CONTENT: Record<SeoPageKey, SeoContent> = {
       { href: "/coe", label: "Latest COE prices" },
       { href: "/commute", label: "Compare ride prices" },
       { href: "/travel", label: "Singapore journey planner" },
+      { href: "/new-driver/btt-mock-test", label: "Free BTT mock exam" },
     ],
     faqs: [
       { q: "What is SGliving?", a: "SGliving is a free Singapore guide that collects daily food deals, supermarket promotions, electronics sales and cheap flights from Changi, alongside guides to shopping malls, hotels, COE results and a ride-price comparison for Grab, Gojek, TADA and public transport." },
@@ -210,6 +211,37 @@ export const SEO_CONTENT: Record<SeoPageKey, SeoContent> = {
       { q: "What is the difference between GetGo and Flexar?", a: "GetGo rents cars by the hour and you return the car to where you picked it up, so it suits round trips. Flexar is point-to-point: you pick up a car at one Flexar station and drop it at another, paying by the minute with fuel included." },
       { q: "How accurate are the prices in this planner?", a: "Public transport fares use the official adult card fare table. Grab, Gojek, GetGo and Flexar prices are estimates from published fees and typical fares, shown as a range. The app shows the exact fare before you book." },
       { q: "What time do MRT trains start and stop running?", a: "Most MRT and LRT lines run from about 5.30am to around midnight, with exact first and last train times varying by station. Outside those hours, take a taxi, ride-hail or a night bus where available." },
+    ],
+  },
+  newdriver: {
+    heading: "Driving in Singapore as a new driver",
+    intro: [
+      "Getting a Singapore licence means passing two theory tests (BTT and FTT) and the Traffic Police practical test, with lessons in between. Government fees are modest — S$7.20 per theory test, S$25 for the Provisional Driving Licence, S$40 for the practical test and S$50 for the licence — but lessons bring the typical total to S$1,700–S$3,000.",
+      "Once you pass, you're on probation for a year with P plates. Rules are getting stricter: speeding penalties rose on 1 January 2026, and from 1 January 2027 a new driver loses their licence at 12 demerit points and other drivers are suspended at 18. Lower drink-driving limits and a ban on holding your phone while driving have also been passed into law.",
+    ],
+    tips: {
+      title: "Tips for learners",
+      items: [
+        "Take a few full BTT mock exams until you score 47+ consistently before booking the real test.",
+        "Book your practical test early — slots at popular centres can fill weeks ahead.",
+        "Ask for a warm-up lesson on test day, and exaggerate every mirror and blind-spot check.",
+        "Not ready to buy a car? Car sharing like GetGo or Flexar lets you keep driving after you pass.",
+      ],
+    },
+    related: [
+      { href: "/new-driver/btt-mock-test", label: "Free BTT mock exam" },
+      { href: "/new-driver/singapore-driving-rules", label: "Latest driving rules" },
+      { href: "/new-driver/how-to-get-driving-licence-singapore", label: "How to get a licence" },
+      { href: "/new-driver/practical-driving-test-tips", label: "Practical test tips" },
+      { href: "/coe", label: "COE prices" },
+      { href: "/travel/what-is-getgo", label: "What is GetGo?" },
+    ],
+    faqs: [
+      { q: "What is the minimum age to drive in Singapore?", a: "You must be at least 18 to get a Class 3 or 3A car licence in Singapore." },
+      { q: "How much does it cost to get a driving licence in Singapore in 2026?", a: "Typically S$1,700–S$3,000 for a Class 3 or 3A licence, mostly lesson fees. Traffic Police fees total about S$140: S$7.20 each for the BTT and FTT, S$25 for the PDL, S$40 for the practical test and S$50 for the licence." },
+      { q: "How do I pass the BTT?", a: "Study the official Basic Theory of Driving handbook, then practise with timed mock tests. You need 45 out of 50 correct, so aim to score consistently above 90% in practice before booking." },
+      { q: "What are P plates in Singapore?", a: "P (probationary) plates — a red triangle on a yellow background — must be displayed by new drivers for their first year. During that year the licence is revoked at 13 demerit points, or 12 from 1 January 2027." },
+      { q: "What changed for drivers in Singapore in 2026?", a: "Speeding penalties rose on 1 January 2026, theory and practical test fees rose on 13 March 2026, and Parliament passed lower drink-driving limits and a phone-holding offence in August 2026 (start date to be announced). Stricter demerit point thresholds start on 1 January 2027." },
     ],
   },
 };
