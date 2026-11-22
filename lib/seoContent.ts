@@ -2,7 +2,7 @@
 // related internal links and FAQs. The same FAQ text feeds both the visible FAQ section
 // and the FAQPage structured data, so they always match (a Google requirement).
 
-export type SeoPageKey = "home" | "food" | "supermarket" | "electronics" | "airline" | "weekend" | "commute" | "travel" | "newdriver" | "blackfriday";
+export type SeoPageKey = "home" | "food" | "supermarket" | "electronics" | "airline" | "weekend" | "commute" | "travel" | "newdriver" | "blackfriday" | "twelvetwelve";
 
 export interface SeoContent {
   heading: string;
@@ -268,6 +268,7 @@ export const SEO_CONTENT: Record<SeoPageKey, SeoContent> = {
       { href: "/supermarket-deals", label: "Supermarket promotions" },
       { href: "/food-deals", label: "Food deals today" },
       { href: "/airline-deals", label: "Cheap flights from Singapore" },
+      { href: "/12-12-sale-singapore", label: "12.12 sale deals" },
       { href: "/malls", label: "Shopping malls by region" },
     ],
     faqs: [
@@ -276,6 +277,38 @@ export const SEO_CONTENT: Record<SeoPageKey, SeoContent> = {
       { q: "Is Black Friday or 12.12 better for deals in Singapore?", a: "It depends on what you're buying. Electronics and appliance stores often give their deepest cuts around Black Friday, while marketplaces such as Shopee and Lazada tend to push their biggest vouchers on 11.11 and 12.12. If a price isn't much lower on Black Friday, it can be worth waiting for 12.12." },
       { q: "How do I know a Black Friday deal is genuine?", a: "Check the item's normal price before the sale, compare the same model at another retailer, and read the terms for limits on stock, outlets or payment methods. Every deal on SGliving links to the original post so you can verify it." },
       { q: "How often is this page updated?", a: "Every night. New Black Friday and Cyber Monday posts are added automatically, and each category shows its latest deals if no Black Friday posts have appeared yet." },
+    ],
+  },
+
+  twelvetwelve: {
+    heading: "12.12 sale 2026 in Singapore: what to know",
+    intro: [
+      "12.12 falls on Saturday 12 December 2026. It's the last of the year's big online sales after 9.9, 10.10 and 11.11. Shopee and Lazada usually lead with platform-wide vouchers and flash deals that start at midnight, and many shops release early-bird vouchers in the days before.",
+      "It's not only marketplaces. Electronics chains, official brand stores, supermarkets, restaurants and airlines often run 12.12 promotions too, and many of them overlap with Christmas shopping. Each deal on this page links to the original post, so you can check the price and terms before you buy.",
+    ],
+    tips: {
+      title: "How to get the most out of 12.12",
+      items: [
+        "Collect platform and shop vouchers in the days before 12.12. Many have limited claims and run out early.",
+        "Add items to your cart ahead of time, so you can check out quickly when flash deals open at midnight or noon.",
+        "Check the final price after vouchers and shipping. A smaller discount from a shop with free delivery can work out cheaper.",
+        "Compare against Black Friday prices you saw in late November before buying big-ticket items.",
+        "Buy from official stores (such as LazMall or Shopee Mall) for electronics, so you get local warranty and easier returns.",
+      ],
+    },
+    related: [
+      { href: "/black-friday-deals-singapore", label: "Black Friday deals" },
+      { href: "/electronics-deals", label: "Electronics deals today" },
+      { href: "/supermarket-deals", label: "Supermarket promotions" },
+      { href: "/food-deals", label: "Food deals today" },
+      { href: "/airline-deals", label: "Cheap flights from Singapore" },
+    ],
+    faqs: [
+      { q: "When is the 12.12 sale in 2026?", a: "12.12 is on Saturday 12 December 2026. Most marketplace flash deals start at midnight and run until the end of the day, and many shops release early-bird vouchers in the days before." },
+      { q: "Which Singapore platforms have 12.12 sales?", a: "Shopee and Lazada run the biggest 12.12 campaigns, with platform-wide vouchers and flash deals. Many brand stores, electronics chains, supermarkets, restaurants and airlines run their own 12.12 promotions too. This page lists the 12.12 deals posted for each category." },
+      { q: "Is 12.12 cheaper than 11.11 or Black Friday?", a: "It varies by product. Marketplaces usually give their biggest vouchers on 11.11 and 12.12, while electronics chains often have their deepest cuts around Black Friday. If you saw a price on Black Friday, compare it with the 12.12 price after vouchers and shipping." },
+      { q: "How do I use 12.12 vouchers?", a: "Claim platform vouchers in the Shopee or Lazada app before the sale, along with any shop vouchers, then apply them at checkout. Vouchers usually have a minimum spend and limited claims, so collect them early." },
+      { q: "How often is this page updated?", a: "Every night. New 12.12 posts are added automatically, and each category shows its latest deals if no 12.12 posts have appeared yet." },
     ],
   },
 };

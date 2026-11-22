@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { pickWidth, toWebp } from "@/lib/imageResize";
 
 const ALLOWED_HOSTS = [
   ".telegram-cdn.org",
@@ -9,8 +10,11 @@ const ALLOWED_HOSTS = [
   ".telesco.pe",
 ];
 
-// Cache proxied Telegram images for 24 h at the edge
+// Resized images are cached on Vercel's CDN (s-maxage), so each photo is fetched from
+// Telegram and resized once per region per week instead of on every page view.
 export const revalidate = 86400;
+const CACHE_OK  = "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400";
+const CACHE_404 = "public, s-maxage=3600";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -42,18 +46,20 @@ export async function GET(req: Request) {
       signal: AbortSignal.timeout(8000),
     });
 
-    if (!imgRes.ok) return new NextResponse(null, { status: 404 });
+    if (!imgRes.ok) return new NextResponse(null, { status: 404, headers: { "Cache-Control": CACHE_404 } });
 
     const body  = await imgRes.arrayBuffer();
     const ctype = imgRes.headers.get("content-type") ?? "image/jpeg";
 
-    return new NextResponse(body, {
+    // Shrink to card size as WebP (typically 80–90% smaller); fall back to the original bytes.
+    const small = ctype.startsWith("image/") ? await toWebp(body, pickWidth(searchParams.get("w"))) : null;
+    return new NextResponse(small ? new Uint8Array(small) : body, {
       headers: {
-        "Content-Type":  ctype,
-        "Cache-Control": "public, max-age=86400, stale-while-revalidate=3600",
+        "Content-Type":  small ? "image/webp" : ctype,
+        "Cache-Control": CACHE_OK,
       },
     });
   } catch {
-    return new NextResponse(null, { status: 404 });
+    return new NextResponse(null, { status: 404, headers: { "Cache-Control": CACHE_404 } });
   }
 }
